@@ -500,9 +500,12 @@ input[type="file"].file-hidden { display: none; }
 
 /* ── Firebase / config uploads ─────────────────────────────── */
 .config-upload-stack {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 1rem;
+}
+.config-upload-item {
+  min-width: 0;
 }
 .config-upload-zone {
   min-height: 120px;
@@ -667,7 +670,7 @@ input[type="file"].file-hidden { display: none; }
 /* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .sidebar { position: static; }
-  .grid-2, .grid-3, .detail-grid, .asset-grid { grid-template-columns: 1fr; }
+  .grid-2, .grid-3, .detail-grid, .asset-grid, .config-upload-stack { grid-template-columns: 1fr; }
   .header-nav { display: none; }
 }
 @media (max-width: 560px) {

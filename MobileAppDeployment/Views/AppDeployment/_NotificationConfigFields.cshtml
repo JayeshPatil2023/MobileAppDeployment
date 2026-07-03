@@ -12,6 +12,7 @@
             <div class="section-title">OneSignal notification section</div>
             <div class="section-desc">Push notification credentials from your OneSignal app</div>
         </div>
+        <span class="section-badge badge-required">Required</span>
     </div>
     <div class="section-body">
         <div class="grid-3">
@@ -58,7 +59,7 @@
                 <div class="upload-zone config-upload-zone @(string.IsNullOrEmpty(Model.FirebaseIosConfigPath) ? "" : "has-file")"
                      data-upload-zone="firebaseIosConfigFile" data-upload-type="config">
                     <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                    <span class="upload-label">GoogleService-Info.plist</span>
+                    <span class="upload-label">GoogleService-Info.plist <span class="required">*</span></span>
                     <span class="upload-spec">Drag and drop or click to upload for iOS</span>
                     <span class="upload-filename"></span>
                     <span class="upload-status @(string.IsNullOrEmpty(Model.FirebaseIosConfigPath) ? "upload-status--pending" : "upload-status--ok")">
@@ -73,7 +74,7 @@
                 <div class="upload-zone config-upload-zone @(string.IsNullOrEmpty(Model.FirebaseAndroidConfigPath) ? "" : "has-file")"
                      data-upload-zone="firebaseAndroidConfigFile" data-upload-type="config">
                     <svg viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
-                    <span class="upload-label">google-services.json</span>
+                    <span class="upload-label">google-services.json <span class="required">*</span></span>
                     <span class="upload-spec">Drag and drop or click to upload for Android</span>
                     <span class="upload-filename"></span>
                     <span class="upload-status @(string.IsNullOrEmpty(Model.FirebaseAndroidConfigPath) ? "upload-status--pending" : "upload-status--ok")">
