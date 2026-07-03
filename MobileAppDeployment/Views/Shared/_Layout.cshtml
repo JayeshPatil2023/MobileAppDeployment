@@ -1,0 +1,68 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - App Deployment</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    @{
+        var isFormLayout = ViewData["FormLayout"] as bool? == true;
+        var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+        var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+    }
+
+    <header class="site-header">
+        <div class="container">
+            <a class="header-logo" asp-controller="AppDeployment" asp-action="Index">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                </div>
+                App Deployment
+            </a>
+            <nav class="header-nav">
+                <a asp-controller="AppDeployment" asp-action="Index"
+                   class="@(currentController == "AppDeployment" && currentAction == "Index" ? "active" : null)">Deployments</a>
+            </nav>
+            <span class="header-badge">Store submission</span>
+            <div class="header-spacer"></div>
+            @if (currentAction != "Create")
+            {
+                <a class="header-action" asp-controller="AppDeployment" asp-action="Create">+ New deployment</a>
+            }
+        </div>
+    </header>
+
+    <main role="main" class="site-main pb-3">
+        <div class="container">
+            <div class="row">
+                @if (isFormLayout)
+                {
+                    <div class="col-12 col-md-3 mb-4 mb-md-0">
+                        <partial name="_FormSidebar" />
+                    </div>
+                    <div class="col-12 col-md-9">
+                        @RenderBody()
+                    </div>
+                }
+                else
+                {
+                    <div class="col-12">
+                        @RenderBody()
+                    </div>
+                }
+            </div>
+        </div>
+    </main>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

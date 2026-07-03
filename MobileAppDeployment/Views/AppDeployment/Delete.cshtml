@@ -1,0 +1,29 @@
+@model MobileAppDeployment.Models.AppDeployment
+@{
+    ViewData["Title"] = "Delete App Deployment";
+}
+
+<p class="page-title">Delete deployment</p>
+<p class="page-sub">This action cannot be undone. All associated asset files will also be removed.</p>
+
+<div class="section">
+    <div class="section-body">
+        <div class="alert-banner alert-banner--warn" style="margin-bottom:1.25rem">
+            Are you sure you want to delete <strong>@Model.AppName</strong>?
+        </div>
+        <div class="detail-grid">
+            <div class="detail-item"><div class="detail-label">App name</div><div class="detail-value">@Model.AppName</div></div>
+            <div class="detail-item"><div class="detail-label">Common name</div><div class="detail-value">@Model.CommonName</div></div>
+            <div class="detail-item"><div class="detail-label">Organization</div><div class="detail-value">@Model.OrganizationName</div></div>
+            <div class="detail-item"><div class="detail-label">Contact</div><div class="detail-value">@Model.ContactFirstName @Model.ContactLastName</div></div>
+        </div>
+    </div>
+</div>
+
+<form asp-action="Delete" method="post">
+    <input type="hidden" asp-for="Id" />
+    <div class="form-footer" style="margin-top:0;padding-top:0;border-top:none">
+        <a asp-action="Index" class="btn btn-ghost">Cancel</a>
+        <button type="submit" class="btn btn-danger">Delete permanently</button>
+    </div>
+</form>

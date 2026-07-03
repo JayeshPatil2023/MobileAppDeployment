@@ -1,0 +1,26 @@
+@model MobileAppDeployment.Models.AppDeployment
+@{
+    ViewData["Title"] = "Edit App Deployment";
+    ViewData["FormLayout"] = true;
+}
+
+<p class="page-title">Edit app deployment</p>
+<p class="page-sub">Update submission details for <strong>@Model.AppName</strong>. Leave asset uploads empty to keep existing files.</p>
+
+<form asp-action="Edit" method="post" enctype="multipart/form-data" id="deployment-form">
+    <input type="hidden" asp-for="Id" />
+    <div asp-validation-summary="All"></div>
+
+    <partial name="_FormFields" model="Model" />
+
+    <div class="form-footer">
+        <a asp-action="Index" class="btn btn-ghost">Cancel</a>
+        <div class="footer-right">
+            <button type="submit" class="btn btn-primary">Update deployment</button>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

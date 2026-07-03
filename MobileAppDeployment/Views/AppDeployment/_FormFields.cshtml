@@ -1,0 +1,200 @@
+@model MobileAppDeployment.Models.AppDeployment
+
+<div class="section" id="sec-org">
+    <div class="section-header">
+        <div class="section-icon icon-org">
+            <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <div class="section-title-group">
+            <div class="section-title">Certificate / organization details</div>
+            <div class="section-desc">SSL certificate fields used for app signing and domain verification</div>
+        </div>
+    </div>
+    <div class="section-body">
+        <div class="grid-2">
+            <div class="field">
+                <label asp-for="CommonName" class="field-label">Common Name (CN) <span class="required">*</span></label>
+                <input asp-for="CommonName" class="form-input mono-input" placeholder="www.domain.com or domain.com" />
+                <span asp-validation-for="CommonName" class="field-error"></span>
+                <span class="field-hint">Host name or domain name (CN).</span>
+            </div>
+            <div class="field">
+                <label asp-for="OrganizationUnit" class="field-label">Organization Unit (OU) <span class="required">*</span></label>
+                <input asp-for="OrganizationUnit" class="form-input" placeholder="Department or organization unit" />
+                <span asp-validation-for="OrganizationUnit" class="field-error"></span>
+            </div>
+        </div>
+        <div class="grid-2 spacer">
+            <div class="field">
+                <label asp-for="OrganizationName" class="field-label">Organization Name (O) <span class="required">*</span></label>
+                <input asp-for="OrganizationName" class="form-input" placeholder="Company name" />
+                <span asp-validation-for="OrganizationName" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="LocalityName" class="field-label">Locality / City (L) <span class="required">*</span></label>
+                <input asp-for="LocalityName" class="form-input" placeholder="City or town name" />
+                <span asp-validation-for="LocalityName" class="field-error"></span>
+            </div>
+        </div>
+        <div class="grid-3 spacer">
+            <div class="field">
+                <label asp-for="StateName" class="field-label">State / Province (S) <span class="required">*</span></label>
+                <input asp-for="StateName" class="form-input" placeholder="Spell out full state name" />
+                <span asp-validation-for="StateName" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Country" class="field-label">Country (C) <span class="required">*</span></label>
+                <input asp-for="Country" class="form-input mono-input" maxlength="2" placeholder="US" />
+                <span asp-validation-for="Country" class="field-error"></span>
+                <span class="field-hint">Two-letter code without punctuation.</span>
+            </div>
+            <div class="field">
+                <label asp-for="AdminEmail" class="field-label">Admin email <span class="required">*</span></label>
+                <input asp-for="AdminEmail" class="form-input" type="email" />
+                <span asp-validation-for="AdminEmail" class="field-error"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="section" id="sec-app">
+    <div class="section-header">
+        <div class="section-icon icon-app">
+            <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+        </div>
+        <div class="section-title-group">
+            <div class="section-title">General app details</div>
+            <div class="section-desc">Core app information shown across store listings</div>
+        </div>
+    </div>
+    <div class="section-body">
+        <div class="field">
+            <label asp-for="AppName" class="field-label">App name <span class="required">*</span></label>
+            <input asp-for="AppName" class="form-input" maxlength="30" />
+            <span asp-validation-for="AppName" class="field-error"></span>
+            <span class="field-hint">Maximum 30 characters.</span>
+        </div>
+        <div class="field spacer">
+            <label asp-for="ShortDescription" class="field-label">Short description <span class="required">*</span></label>
+            <input asp-for="ShortDescription" class="form-input" maxlength="80" />
+            <span asp-validation-for="ShortDescription" class="field-error"></span>
+            <span class="field-hint">Maximum 80 characters.</span>
+        </div>
+        <div class="field spacer">
+            <label asp-for="FullDescription" class="field-label">Full description <span class="required">*</span></label>
+            <textarea asp-for="FullDescription" maxlength="4000"></textarea>
+            <span asp-validation-for="FullDescription" class="field-error"></span>
+            <span class="field-hint">Maximum 4000 characters.</span>
+        </div>
+    </div>
+</div>
+
+<partial name="_IdentifierFields" model="Model" />
+
+<div class="section" id="sec-apple">
+    <div class="section-header">
+        <div class="section-icon icon-apple">
+            <svg viewBox="0 0 24 24"><path d="M12 20.94c1.5 0 2.75 1.06 4 1.06 3 0 6-8 6-12.22A4.91 4.91 0 0017 5c-2.22 0-4 1.44-5 2-1-.56-2.78-2-5-2a4.9 4.9 0 00-5 4.78C2 14 5 22 8 22c1.25 0 2.5-1.06 4-1.06z"/><path d="M10 2c1 .5 2 2 2 5"/></svg>
+        </div>
+        <div class="section-title-group">
+            <div class="section-title">Apple app listing</div>
+            <div class="section-desc">App Store Connect listing page content</div>
+        </div>
+    </div>
+    <div class="section-body">
+        <div class="grid-2">
+            <div class="field">
+                <label asp-for="AppleName" class="field-label">Name <span class="required">*</span></label>
+                <input asp-for="AppleName" class="form-input" maxlength="30" />
+                <span asp-validation-for="AppleName" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="AppleSubtitle" class="field-label">Subtitle <span class="required">*</span></label>
+                <input asp-for="AppleSubtitle" class="form-input" maxlength="30" />
+                <span asp-validation-for="AppleSubtitle" class="field-error"></span>
+            </div>
+        </div>
+        <div class="field spacer">
+            <label asp-for="ApplePromotionalText" class="field-label">Promotional text</label>
+            <input asp-for="ApplePromotionalText" class="form-input" maxlength="170" />
+            <span asp-validation-for="ApplePromotionalText" class="field-error"></span>
+            <span class="field-hint">Maximum 170 characters. Optional.</span>
+        </div>
+        <div class="field spacer">
+            <label asp-for="AppleDescription" class="field-label">Description <span class="required">*</span></label>
+            <textarea asp-for="AppleDescription" maxlength="4000"></textarea>
+            <span asp-validation-for="AppleDescription" class="field-error"></span>
+        </div>
+        <div class="field spacer">
+            <label asp-for="AppleKeywords" class="field-label">Keywords <span class="required">*</span></label>
+            <input asp-for="AppleKeywords" class="form-input" maxlength="100" />
+            <span asp-validation-for="AppleKeywords" class="field-error"></span>
+            <span class="field-hint">Maximum 100 characters, comma-separated.</span>
+        </div>
+        <div class="grid-2 spacer">
+            <div class="field">
+                <label asp-for="AppleSupportUrl" class="field-label">Support URL</label>
+                <input asp-for="AppleSupportUrl" class="form-input" type="url" placeholder="https:// (optional)" />
+                <span asp-validation-for="AppleSupportUrl" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="AppleMarketingUrl" class="field-label">Marketing URL</label>
+                <input asp-for="AppleMarketingUrl" class="form-input" type="url" placeholder="https:// (optional)" />
+                <span asp-validation-for="AppleMarketingUrl" class="field-error"></span>
+            </div>
+        </div>
+        <div class="field spacer">
+            <label asp-for="AppleCopyright" class="field-label">Copyright <span class="required">*</span></label>
+            <input asp-for="AppleCopyright" class="form-input" />
+            <span asp-validation-for="AppleCopyright" class="field-error"></span>
+        </div>
+    </div>
+</div>
+
+<partial name="_AssetFields" model="Model" />
+
+<partial name="_NotificationConfigFields" model="Model" />
+
+<div class="section" id="sec-contact">
+    <div class="section-header">
+        <div class="section-icon icon-contact">
+            <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div class="section-title-group">
+            <div class="section-title">Contact information</div>
+            <div class="section-desc">Store contact details and privacy policy</div>
+        </div>
+    </div>
+    <div class="section-body">
+        <div class="grid-2">
+            <div class="field">
+                <label asp-for="ContactFirstName" class="field-label">First name <span class="required">*</span></label>
+                <input asp-for="ContactFirstName" class="form-input" />
+                <span asp-validation-for="ContactFirstName" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="ContactLastName" class="field-label">Last name <span class="required">*</span></label>
+                <input asp-for="ContactLastName" class="form-input" />
+                <span asp-validation-for="ContactLastName" class="field-error"></span>
+            </div>
+        </div>
+        <div class="grid-2 spacer">
+            <div class="field">
+                <label asp-for="ContactPhoneNumber" class="field-label">Phone number <span class="required">*</span></label>
+                <input asp-for="ContactPhoneNumber" class="form-input" type="tel" />
+                <span asp-validation-for="ContactPhoneNumber" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="ContactEmailAddress" class="field-label">Email address <span class="required">*</span></label>
+                <input asp-for="ContactEmailAddress" class="form-input" type="email" />
+                <span asp-validation-for="ContactEmailAddress" class="field-error"></span>
+            </div>
+        </div>
+        <div class="field spacer">
+            <label asp-for="PrivacyPolicyUrl" class="field-label">Privacy policy URL <span class="required">*</span></label>
+            <input asp-for="PrivacyPolicyUrl" class="form-input" type="url" placeholder="https:// (must have content)" />
+            <span asp-validation-for="PrivacyPolicyUrl" class="field-error"></span>
+            <span class="field-hint">Apple will reject if the privacy policy page is empty.</span>
+        </div>
+    </div>
+</div>

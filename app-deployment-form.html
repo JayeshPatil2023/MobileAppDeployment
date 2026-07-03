@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>App Deployment Configuration</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; scroll-behavior: smooth; }
+
+    /* ── Tokens ─────────────────────────────────────────────── */
+    :root {
+      --bg-page:       #F0F2F5;
+      --bg-card:       #FFFFFF;
+      --bg-sub:        #F7F8FA;
+      --bg-input:      #FFFFFF;
+      --border-soft:   #E2E5EB;
+      --border-mid:    #C8CDD8;
+      --border-focus:  #3B6CF4;
+      --accent:        #3B6CF4;
+      --accent-light:  #EEF2FF;
+      --accent-dark:   #2751C3;
+      --success:       #16A34A;
+      --success-light: #DCFCE7;
+      --warn:          #D97706;
+      --warn-light:    #FEF3C7;
+      --danger:        #DC2626;
+      --danger-light:  #FEE2E2;
+      --text-primary:  #111827;
+      --text-secondary:#4B5563;
+      --text-muted:    #9CA3AF;
+      --text-link:     #3B6CF4;
+      --radius-sm:     6px;
+      --radius-md:     10px;
+      --radius-lg:     14px;
+      --shadow-card:   0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+      --shadow-focus:  0 0 0 3px rgba(59,108,244,.18);
+      --font-body:     'Inter', system-ui, sans-serif;
+      --font-mono:     'JetBrains Mono', monospace;
+      --sidebar-w:     220px;
+      --content-max:   720px;
+      --header-h:      64px;
+    }
+
+    /* ── Base ─────────────────────────────────────────────── */
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-page);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    .site-header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--header-h);
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-soft);
+      display: flex;
+      align-items: center;
+      padding: 0 2rem;
+      gap: 1rem;
+      z-index: 100;
+    }
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+    .header-logo .logo-icon {
+      width: 32px; height: 32px;
+      background: var(--accent);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .header-logo .logo-icon svg { width: 18px; height: 18px; fill: #fff; }
+    .header-spacer { flex: 1; }
+    .header-badge {
+      font-size: 12px;
+      font-weight: 500;
+      background: var(--accent-light);
+      color: var(--accent-dark);
+      border: 1px solid rgba(59,108,244,.18);
+      border-radius: 20px;
+      padding: 3px 12px;
+    }
+    .header-save {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: none;
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius-sm);
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: background .15s, border-color .15s;
+    }
+    .header-save:hover { background: var(--bg-sub); border-color: var(--border-mid); }
+
+    /* ── Layout ─────────────────────────────────────────────── */
+    .layout {
+      display: flex;
+      padding-top: var(--header-h);
+      min-height: 100vh;
+    }
+
+    /* ── Sidebar ─────────────────────────────────────────────── */
+    .sidebar {
+      position: fixed;
+      top: var(--header-h);
+      left: 0;
+      width: var(--sidebar-w);
+      height: calc(100vh - var(--header-h));
+      background: var(--bg-card);
+      border-right: 1px solid var(--border-soft);
+      padding: 1.5rem 0;
+      overflow-y: auto;
+    }
+    .sidebar-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 0 1.25rem;
+      margin-bottom: .5rem;
+    }
+    .sidebar-nav { list-style: none; padding: 0; }
+    .sidebar-nav li { margin-bottom: 2px; }
+    .sidebar-nav a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 1.25rem;
+      font-size: 13.5px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      border-radius: 0;
+      transition: background .12s, color .12s;
+      border-left: 2px solid transparent;
+    }
+    .sidebar-nav a:hover { background: var(--bg-sub); color: var(--text-primary); }
+    .sidebar-nav a.active {
+      background: var(--accent-light);
+      color: var(--accent-dark);
+      border-left-color: var(--accent);
+      font-weight: 500;
+    }
+    .sidebar-nav a svg { width: 16px; height: 16px; flex-shrink: 0; opacity: .7; }
+    .sidebar-nav a.active svg { opacity: 1; }
+    .sidebar-divider {
+      height: 1px;
+      background: var(--border-soft);
+      margin: 1rem 1.25rem;
+    }
+    .sidebar-progress {
+      padding: 0 1.25rem;
+      margin-top: 1.25rem;
+    }
+    .sidebar-progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: .4rem;
+    }
+    .sidebar-progress-bar {
+      height: 4px;
+      background: var(--border-soft);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .sidebar-progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 4px;
+      width: 0%;
+      transition: width .3s ease;
+    }
+
+    /* ── Main ─────────────────────────────────────────────── */
+    .main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      padding: 2.5rem 2rem 4rem;
+      max-width: calc(var(--sidebar-w) + var(--content-max) + 4rem);
+    }
+    .page-title {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    .page-sub {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+    }
+
+    /* ── Section card ─────────────────────────────────────────────── */
+    .section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border-soft);
+    }
+    .section-icon {
+      width: 30px; height: 30px;
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .section-icon svg { width: 16px; height: 16px; }
+    .icon-org    { background: #EEF2FF; } .icon-org svg    { stroke: #4F46E5; }
+    .icon-web    { background: #F0FDF4; } .icon-web svg    { stroke: #16A34A; }
+    .icon-mobile { background: #FFF7ED; } .icon-mobile svg { stroke: #EA580C; }
+    .icon-assets { background: #FDF4FF; } .icon-assets svg { stroke: #9333EA; }
+    .icon-analytics { background: #F0F9FF; } .icon-analytics svg { stroke: #0284C7; }
+    .icon-extra  { background: #F8FAFC; } .icon-extra svg  { stroke: #64748B; }
+
+    .section-title-group { flex: 1; }
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .section-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+    .section-badge {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 9px;
+      border-radius: 20px;
+    }
+    .badge-optional {
+      background: var(--bg-sub);
+      color: var(--text-muted);
+      border: 1px solid var(--border-soft);
+    }
+    .section-body {
+      padding: 1.5rem;
+    }
+
+    /* ── Sub-section ─────────────────────────────────────────────── */
+    .subsection {
+      background: var(--bg-sub);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .subsection:last-child { margin-bottom: 0; }
+    .subsection-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 1rem;
+      padding-bottom: .75rem;
+      border-bottom: 1px solid var(--border-soft);
+    }
+    .subsection-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .subsection-icon {
+      width: 22px; height: 22px;
+      border-radius: 5px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .subsection-icon svg { width: 13px; height: 13px; }
+    .sub-android { background: #DCFCE7; } .sub-android svg { stroke: #15803D; }
+    .sub-ios     { background: #F1F5F9; } .sub-ios svg     { stroke: #334155; }
+    .sub-logo    { background: #FDF4FF; } .sub-logo svg    { stroke: #7E22CE; }
+    .sub-splash  { background: #FFF7ED; } .sub-splash svg  { stroke: #C2410C; }
+    .sub-play    { background: #ECFDF5; } .sub-play svg    { stroke: #059669; }
+
+    /* ── Grid ─────────────────────────────────────────────── */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1rem;
+    }
+    .col-full { grid-column: 1 / -1; }
+
+    /* ── Field ─────────────────────────────────────────────── */
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field-label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+    .required { color: var(--danger); font-size: 11px; }
+    .ref-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--text-link);
+      text-decoration: none;
+      margin-left: 2px;
+    }
+    .ref-link:hover { text-decoration: underline; }
+    .ref-link svg { width: 10px; height: 10px; }
+    .field-hint {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+    .field + .field { margin-top: 0; }
+
+    /* ── Inputs ─────────────────────────────────────────────── */
+    input[type="text"],
+    input[type="email"],
+    input[type="url"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 8px 12px;
+      font-size: 13.5px;
+      font-family: var(--font-body);
+      color: var(--text-primary);
+      background: var(--bg-input);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-sm);
+      transition: border-color .15s, box-shadow .15s;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    input[type="text"]:hover,
+    input[type="email"]:hover,
+    input[type="url"]:hover,
+    select:hover { border-color: var(--border-mid); }
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    input[type="url"]:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--border-focus);
+      box-shadow: var(--shadow-focus);
+    }
+    input.is-valid { border-color: var(--success); }
+    input.is-error { border-color: var(--danger); }
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 32px;
+      cursor: pointer;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      line-height: 1.6;
+    }
+    .mono-input { font-family: var(--font-mono); font-size: 13px; letter-spacing: .01em; }
+    .spacer { margin-top: 1rem; }
+
+    /* ── Upload zones ─────────────────────────────────────────────── */
+    .asset-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .asset-item {}
+    .asset-label {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .spec-badge {
+      font-size: 10.5px;
+      font-weight: 500;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      background: var(--bg-page);
+      border: 1px solid var(--border-soft);
+      border-radius: 4px;
+      padding: 1px 6px;
+    }
+    .upload-zone {
+      border: 1.5px dashed var(--border-mid);
+      border-radius: var(--radius-md);
+      padding: .875rem 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      background: var(--bg-card);
+      transition: border-color .15s, background .15s;
+      text-align: center;
+      min-height: 90px;
+      justify-content: center;
+    }
+    .upload-zone:hover { border-color: var(--accent); background: var(--accent-light); }
+    .upload-zone.has-file {
+      border-color: var(--success);
+      background: var(--success-light);
+      border-style: solid;
+    }
+    .upload-zone svg { width: 22px; height: 22px; stroke: var(--text-muted); }
+    .upload-zone:hover svg,
+    .upload-zone.has-file svg { stroke: var(--accent); }
+    .upload-zone.has-file svg { stroke: var(--success); }
+    .upload-label { font-size: 12px; color: var(--text-secondary); }
+    .upload-spec { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
+    .upload-filename {
+      font-size: 11.5px;
+      color: var(--success);
+      font-weight: 500;
+      max-width: 140px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .preview-wrap {
+      display: none;
+      margin-top: 8px;
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      width: 52px;
+      height: 52px;
+      background: var(--bg-sub);
+    }
+    .preview-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    /* ── Footer / actions ─────────────────────────────────────────────── */
+    .form-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-soft);
+      gap: 1rem;
+    }
+    .footer-left { display: flex; align-items: center; gap: .5rem; }
+    .footer-right { display: flex; align-items: center; gap: .75rem; }
+    .validation-msg {
+      font-size: 13px;
+      color: var(--danger);
+      display: none;
+      align-items: center;
+      gap: 5px;
+    }
+    .validation-msg svg { width: 15px; height: 15px; stroke: var(--danger); }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 18px;
+      font-size: 13.5px;
+      font-weight: 500;
+      font-family: var(--font-body);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    .btn svg { width: 15px; height: 15px; }
+    .btn-ghost {
+      background: none;
+      color: var(--text-secondary);
+      border: 1px solid var(--border-soft);
+    }
+    .btn-ghost:hover { background: var(--bg-sub); border-color: var(--border-mid); }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border: 1px solid var(--accent);
+    }
+    .btn-primary:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+    .btn-primary:active { transform: scale(.98); }
+    .btn-success {
+      background: var(--success);
+      color: #fff;
+      border: 1px solid var(--success);
+      display: none;
+    }
+
+    /* ── Success overlay ─────────────────────────────────────────────── */
+    .success-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+    .success-overlay.visible { display: flex; }
+    .success-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: 2.5rem;
+      max-width: 420px;
+      width: calc(100% - 2rem);
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,.2);
+    }
+    .success-icon {
+      width: 56px; height: 56px;
+      background: var(--success-light);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1rem;
+    }
+    .success-icon svg { width: 28px; height: 28px; stroke: var(--success); }
+    .success-title { font-size: 18px; font-weight: 600; margin-bottom: .5rem; }
+    .success-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
+    .success-close {
+      margin-top: 1.5rem;
+      padding: 9px 24px;
+      font-size: 14px;
+      font-weight: 500;
+      background: var(--text-primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+    }
+
+    /* ── Responsive ─────────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; padding: 1.5rem 1rem 3rem; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .grid-3 { grid-template-columns: 1fr; }
+      .asset-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 560px) {
+      .site-header { padding: 0 1rem; gap: .75rem; }
+      .header-badge { display: none; }
+    }
+
+    /* ── Reduced motion ─────────────────────────────────────────────── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="site-header">
+  <a class="header-logo" href="#">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+    </div>
+    DeployKit
+  </a>
+  <span class="header-badge">Automated deployment</span>
+  <div class="header-spacer"></div>
+  <button class="header-save" onclick="saveDraft()">Save draft</button>
+</header>
+
+<!-- Layout -->
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-label">Sections</div>
+    <ul class="sidebar-nav">
+      <li>
+        <a href="#sec-org" class="active" data-section="sec-org">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Organization
+        </a>
+      </li>
+      <li>
+        <a href="#sec-web" data-section="sec-web">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+          Website
+        </a>
+      </li>
+      <li>
+        <a href="#sec-mobile" data-section="sec-mobile">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          Mobile app
+        </a>
+      </li>
+      <li>
+        <a href="#sec-assets" data-section="sec-assets">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          Assets
+        </a>
+      </li>
+      <li>
+        <a href="#sec-analytics" data-section="sec-analytics">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Analytics
+        </a>
+      </li>
+      <li>
+        <a href="#sec-extra" data-section="sec-extra">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+          Advanced
+        </a>
+      </li>
+    </ul>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-progress">
+      <div class="sidebar-progress-label">
+        <span>Completion</span>
+        <span id="prog-pct">0%</span>
+      </div>
+      <div class="sidebar-progress-bar">
+        <div class="sidebar-progress-fill" id="prog-fill"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <p class="page-title">Application deployment</p>
+    <p class="page-sub">Configure your website and mobile app below. Fields marked <span style="color:var(--danger)">*</span> are required before deployment can start.</p>
+
+    <!-- ── Organization ─── -->
+    <div class="section" id="sec-org">
+      <div class="section-header">
+        <div class="section-icon icon-org">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <div class="section-title-group">
+          <div class="section-title">Organization details</div>
+          <div class="section-desc">Used in app store listings, notifications, and build metadata</div>
+        </div>
+      </div>
+      <div class="section-body">
+        <div class="grid-2">
+          <div class="field">
+            <label class="field-label" for="org-name">Organization name <span class="required">*</span></label>
+            <input type="text" id="org-name" placeholder="Acme Corp" autocomplete="organization" oninput="updateProgress()">
+            <span class="field-hint">Legal or operating name shown in store listings</span>
+          </div>
+          <div class="field">
+            <label class="field-label" for="org-email">Contact email <span class="required">*</span></label>
+            <input type="email" id="org-email" placeholder="dev@acmecorp.com" autocomplete="email" oninput="updateProgress()">
+            <span class="field-hint">Deployment alerts and status notifications go here</span>
+          </div>
+        </div>
+        <div class="grid-2 spacer">
+          <div class="field">
+            <label class="field-label" for="org-country">Country / region</label>
+            <select id="org-country">
+              <option value="">Select country</option>
+              <option>India</option>
+              <option>United States</option>
+              <option>United Kingdom</option>
+              <option>Australia</option>
+              <option>Canada</option>
+              <option>Germany</option>
+              <option>Singapore</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="org-size">Team size</label>
+            <select id="org-size">
+              <option value="">Select size</option>
+              <option>Solo</option>
+              <option>2–10</option>
+              <option>11–50</option>
+              <option>51–200</option>
+              <option>200+</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Website ─── -->
+    <div class="section" id="sec-web">
+      <div class="section-header">
+        <div class="section-icon icon-web">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+        </div>
+        <div class="section-title-group">
+          <div class="section-title">Website configuration</div>
+          <div class="section-desc">Domain must be pointed to your host before deployment. SSL is auto-provisioned.</div>
+        </div>
+      </div>
+      <div class="section-body">
+        <div class="field">
+          <label class="field-label" for="domain">Domain <span class="required">*</span></label>
+          <input type="url" id="domain" placeholder="https://yourapp.com" oninput="updateProgress()">
+          <span class="field-hint">Point your domain's A record to the deployment server. A free SSL certificate will be issued automatically via Let's Encrypt.</span>
+        </div>
+        <div class="grid-3 spacer">
+          <div class="field">
+            <label class="field-label" for="web-env">Environment</label>
+            <select id="web-env">
+              <option>Production</option>
+              <option>Staging</option>
+              <option>Development</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="web-framework">Framework / CMS</label>
+            <select id="web-framework">
+              <option value="">Select framework</option>
+              <option>React</option>
+              <option>Next.js</option>
+              <option>Vue / Nuxt</option>
+              <option>Angular</option>
+              <option>WordPress</option>
+              <option>Laravel</option>
+              <option>Custom / Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="web-node">Node version</label>
+            <input type="text" id="web-node" placeholder="20.x" class="mono-input">
+            <span class="field-hint">e.g. 18.x, 20.x</span>
+          </div>
+        </div>
+        <div class="grid-2 spacer">
+          <div class="field">
+            <label class="field-label" for="web-build-cmd">Build command</label>
+            <input type="text" id="web-build-cmd" placeholder="npm run build" class="mono-input">
+          </div>
+          <div class="field">
+            <label class="field-label" for="web-out-dir">Output directory</label>
+            <input type="text" id="web-out-dir" placeholder="dist" class="mono-input">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Mobile ─── -->
+    <div class="section" id="sec-mobile">
+      <div class="section-header">
+        <div class="section-icon icon-mobile">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+        </div>
+        <div class="section-title-group">
+          <div class="section-title">Mobile configuration</div>
+          <div class="section-desc">Android and iOS build identifiers. Must match your store registrations exactly.</div>
+        </div>
+      </div>
+      <div class="section-body">
+
+        <!-- Android -->
+        <div class="subsection">
+          <div class="subsection-header">
+            <div class="subsection-icon sub-android">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 16a7 7 0 1114 0M8 16v4M16 16v4M9 11h.01M15 11h.01"/></svg>
+            </div>
+            <span class="subsection-title">Android settings</span>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label class="field-label" for="pkg-name">
+                Package name <span class="required">*</span>
+                <a class="ref-link" href="https://developer.android.com/studio/build/configure-app-module#set-application-id" target="_blank" rel="noopener">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  Android docs
+                </a>
+              </label>
+              <input type="text" id="pkg-name" placeholder="com.acmecorp.app" class="mono-input" oninput="updateProgress()">
+              <span class="field-hint">Unique app ID on Google Play. Once published, this cannot change.</span>
+            </div>
+            <div class="field">
+              <label class="field-label" for="android-min-sdk">Minimum SDK</label>
+              <select id="android-min-sdk">
+                <option value="21">API 21 — Android 5.0 Lollipop</option>
+                <option value="23">API 23 — Android 6.0 Marshmallow</option>
+                <option value="24" selected>API 24 — Android 7.0 Nougat</option>
+                <option value="26">API 26 — Android 8.0 Oreo</option>
+                <option value="28">API 28 — Android 9.0 Pie</option>
+                <option value="30">API 30 — Android 11</option>
+                <option value="33">API 33 — Android 13</option>
+              </select>
+              <span class="field-hint">Devices below this version won't see your app</span>
+            </div>
+          </div>
+          <div class="field spacer">
+            <label class="field-label" for="play-url">Google Play listing URL</label>
+            <input type="url" id="play-url" placeholder="https://play.google.com/store/apps/details?id=com.acmecorp.app">
+            <span class="field-hint">Leave blank if not yet published — the build pipeline will create a new listing</span>
+          </div>
+        </div>
+
+        <!-- iOS -->
+        <div class="subsection">
+          <div class="subsection-header">
+            <div class="subsection-icon sub-ios">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.94c1.5 0 2.75-.6 3.95-1.52M8.05 19.42C6.85 18.5 5.75 17.3 5 15.88 3.5 13.24 3 10.12 4 7.5c.5-1.24 1.3-2.27 2.3-3.06M12 3.06c.65 0 1.28.08 1.88.24M17 6.48A7.97 7.97 0 0120 13c0 1.12-.23 2.18-.65 3.14"/></svg>
+            </div>
+            <span class="subsection-title">iOS settings</span>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label class="field-label" for="bundle-id">
+                Bundle ID <span class="required">*</span>
+                <a class="ref-link" href="https://developer.apple.com/documentation/appstoreconnectapi/bundle_ids" target="_blank" rel="noopener">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  App Store docs
+                </a>
+              </label>
+              <input type="text" id="bundle-id" placeholder="com.acmecorp.app" class="mono-input" oninput="updateProgress()">
+              <span class="field-hint">Must match exactly what's registered in App Store Connect</span>
+            </div>
+            <div class="field">
+              <label class="field-label" for="team-id">
+                Apple Team ID <span class="required">*</span>
+                <a class="ref-link" href="https://developer.apple.com/account#MembershipDetailsCard" target="_blank" rel="noopener">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  Find it
+                </a>
+              </label>
+              <input type="text" id="team-id" placeholder="A1B2C3D4E5" class="mono-input" oninput="updateProgress()" maxlength="10">
+              <span class="field-hint">10-character alphanumeric ID from your Apple Developer membership page</span>
+            </div>
+          </div>
+          <div class="grid-2 spacer">
+            <div class="field">
+              <label class="field-label" for="ios-min">Minimum iOS version</label>
+              <select id="ios-min">
+                <option>iOS 14</option>
+                <option>iOS 15</option>
+                <option selected>iOS 16</option>
+                <option>iOS 17</option>
+                <option>iOS 18</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label" for="appstore-url">App Store URL</label>
+              <input type="url" id="appstore-url" placeholder="https://apps.apple.com/app/id...">
+              <span class="field-hint">Leave blank if not yet published</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Assets ─── -->
+    <div class="section" id="sec-assets">
+      <div class="section-header">
+        <div class="section-icon icon-assets">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+        <div class="section-title-group">
+          <div class="section-title">Assets</div>
+          <div class="section-desc">All images must be PNG unless noted. Keep key content centred within safe zones.</div>
+        </div>
+      </div>
+      <div class="section-body">
+
+        <!-- Logos -->
+        <div class="subsection">
+          <div class="subsection-header">
+            <div class="subsection-icon sub-logo">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72M10.5 21.5c-.75-4.5-1-7.5-1-10.5M2.31 7.5c2 1 3.69 2 7.19 3.5"/></svg>
+            </div>
+            <span class="subsection-title">Logos</span>
+          </div>
+          <div class="asset-grid">
+            <div class="asset-item">
+              <div class="asset-label">Website logo <span class="spec-badge">1024 × 1024</span></div>
+              <div class="upload-zone" id="zone-web-logo" onclick="triggerUpload('inp-web-logo')">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span class="upload-label">Click to upload PNG</span>
+                <span class="upload-spec">1024 × 1024 · PNG</span>
+              </div>
+              <input type="file" id="inp-web-logo" accept="image/png" style="display:none" onchange="handleUpload(this,'zone-web-logo','prev-web-logo')">
+              <div class="preview-wrap" id="prev-web-logo"><img alt="Website logo preview"></div>
+              <span class="field-hint" style="margin-top:6px;display:block">Used as favicon and OG image. Auto-resized to all web sizes.</span>
+            </div>
+            <div class="asset-item">
+              <div class="asset-label">Mobile app icon <span class="spec-badge">1024 × 1024</span></div>
+              <div class="upload-zone" id="zone-mob-logo" onclick="triggerUpload('inp-mob-logo')">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span class="upload-label">Click to upload PNG</span>
+                <span class="upload-spec">1024 × 1024 · PNG · no alpha</span>
+              </div>
+              <input type="file" id="inp-mob-logo" accept="image/png" style="display:none" onchange="handleUpload(this,'zone-mob-logo','prev-mob-logo')">
+              <div class="preview-wrap" id="prev-mob-logo"><img alt="Mobile icon preview"></div>
+              <span class="field-hint" style="margin-top:6px;display:block">Auto-exported for all iOS and Android icon sizes and densities.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Splash -->
+        <div class="subsection">
+          <div class="subsection-header">
+            <div class="subsection-icon sub-splash">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+            </div>
+            <span class="subsection-title">Splash screen</span>
+          </div>
+          <div style="max-width:340px">
+            <div class="asset-label">Launch image <span class="spec-badge">2732 × 2732</span></div>
+            <div class="upload-zone" id="zone-splash" onclick="triggerUpload('inp-splash')">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span class="upload-label">Click to upload PNG</span>
+              <span class="upload-spec">2732 × 2732 · PNG · centered safe zone 1024 px</span>
+            </div>
+            <input type="file" id="inp-splash" accept="image/png" style="display:none" onchange="handleUpload(this,'zone-splash','prev-splash')">
+            <div class="preview-wrap" id="prev-splash"><img alt="Splash screen preview"></div>
+            <span class="field-hint" style="margin-top:6px;display:block">Keep key content within the central 1024 × 1024 safe zone. Used on both iOS and Android at launch.</span>
+          </div>
+        </div>
+
+        <!-- Play Store -->
+        <div class="subsection">
+          <div class="subsection-header">
+            <div class="subsection-icon sub-play">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </div>
+            <span class="subsection-title">Play Store assets</span>
+          </div>
+          <div class="asset-grid">
+            <div class="asset-item">
+              <div class="asset-label">Store icon <span class="spec-badge">512 × 512</span></div>
+              <div class="upload-zone" id="zone-play-icon" onclick="triggerUpload('inp-play-icon')">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span class="upload-label">Click to upload PNG</span>
+                <span class="upload-spec">512 × 512 · PNG · solid bg</span>
+              </div>
+              <input type="file" id="inp-play-icon" accept="image/png" style="display:none" onchange="handleUpload(this,'zone-play-icon','prev-play-icon')">
+              <div class="preview-wrap" id="prev-play-icon"><img alt="Play Store icon preview"></div>
+              <span class="field-hint" style="margin-top:6px;display:block">Solid background required — Play Store does not accept transparency.</span>
+            </div>
+            <div class="asset-item">
+              <div class="asset-label">Feature graphic / banner <span class="spec-badge">1024 × 500</span></div>
+              <div class="upload-zone" id="zone-play-banner" onclick="triggerUpload('inp-play-banner')">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span class="upload-label">Click to upload JPEG or PNG</span>
+                <span class="upload-spec">1024 × 500 · JPG or PNG</span>
+              </div>
+              <input type="file" id="inp-play-banner" accept="image/png,image/jpeg" style="display:none" onchange="handleUpload(this,'zone-play-banner','prev-play-banner')">
+              <div class="preview-wrap" id="prev-play-banner"><img alt="Feature graphic preview"></div>
+              <span class="field-hint" style="margin-top:6px;display:block">Shown at the top of your Play Store listing. Include the app name and hero visual.</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Analytics ─── -->
+    <div class="section" id="sec-analytics">
+      <div class="section-header">
+        <div class="section-icon icon-analytics">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </div>
+        <div class="section-title-group">
+          <div class="section-title">Analytics</div>
+          <div class="section-desc">Integrated automatically into both web and mobile builds</div>
+        </div>
+      </div>
+      <div class="section-body">
+        <div class="grid-2">
+          <div class="field">
+            <label class="field-label" for="ga-id">
+              GA4 Measurement ID
+              <a class="ref-link" href="https://support.google.com/analytics/answer/9539598" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                Find it
+              </a>
+            </label>
+            <input type="text" id="ga-id" placeholder="G-XXXXXXXXXX" class="mono-input">
+            <span class="field-hint">Admin → Data streams → Web stream → Measurement ID</span>
+          </div>
+          <div class="field">
+            <label class="field-label" for="firebase-pid">
+              Firebase project ID
+              <a class="ref-link" href="https://console.firebase.google.com" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                Console
+              </a>
+            </label>
+            <input type="text" id="firebase-pid" placeholder="my-app-12345" class="mono-input">
+            <span class="field-hint">Firebase console → Project settings → General</span>
+          </div>
+        </div>
+        <div class="grid-2 spacer">
+          <div class="field">
+            <label class="field-label" for="firebase-android">
+              Firebase Android app ID
+              <a class="ref-link" href="https://console.firebase.google.com" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                Ref
+              </a>
+            </label>
+            <input type="text" id="firebase-android" placeholder="1:123456789:android:abc" class="mono-input">
+            <span class="field-hint">Project settings → Your apps → Android app</span>
+          </div>
+          <div class="field">
+            <label class="field-label" for="firebase-ios">
+              Firebase iOS app ID
+              <a class="ref-link" href="https://console.firebase.google.com" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                Ref
+              </a>
+            </label>
+            <input type="text" id="firebase-ios" placeholder="1:123456789:ios:abc" class="mono-input">
+            <span class="field-hint">Project settings → Your apps → iOS app</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Advanced / Optional ─── -->
+    <div class="section" id="sec-extra">
+      <div class="section-header">
+        <div class="section-icon icon-extra">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+        </div>
+        <div class="section-title-group">
+          <div class="section-title">Advanced settings</div>
+          <div class="section-desc">CI/CD pipeline, notifications, environment config</div>
+        </div>
+        <span class="section-badge badge-optional">Optional</span>
+      </div>
+      <div class="section-body">
+        <div class="grid-3">
+          <div class="field">
+            <label class="field-label" for="cicd">CI/CD pipeline</label>
+            <select id="cicd">
+              <option>GitHub Actions</option>
+              <option>GitLab CI</option>
+              <option>Bitrise</option>
+              <option>Fastlane</option>
+              <option>CircleCI</option>
+              <option>Custom</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="version">Version number</label>
+            <input type="text" id="version" placeholder="1.0.0" class="mono-input">
+            <span class="field-hint">Semantic version for first release</span>
+          </div>
+          <div class="field">
+            <label class="field-label" for="push-svc">Push notifications</label>
+            <select id="push-svc">
+              <option value="">Not required</option>
+              <option>Firebase Cloud Messaging</option>
+              <option>OneSignal</option>
+              <option>Pusher</option>
+              <option>Custom</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid-2 spacer">
+          <div class="field">
+            <label class="field-label" for="locales">Store locales</label>
+            <input type="text" id="locales" placeholder="en-US, en-IN, hi-IN">
+            <span class="field-hint">Comma-separated locale codes for store release</span>
+          </div>
+          <div class="field">
+            <label class="field-label" for="git-repo">Git repository URL</label>
+            <input type="url" id="git-repo" placeholder="https://github.com/org/repo">
+            <span class="field-hint">Used by the pipeline to clone and build</span>
+          </div>
+        </div>
+        <div class="field spacer">
+          <label class="field-label" for="env-vars">Environment variables</label>
+          <textarea id="env-vars" placeholder="API_BASE_URL=https://api.yourapp.com&#10;FEATURE_FLAGS=true&#10;(one KEY=value per line — encrypted at rest)"></textarea>
+          <span class="field-hint">Non-secret config only. For secrets, use your CI/CD platform's secret store.</span>
+        </div>
+        <div class="field spacer">
+          <label class="field-label" for="deploy-notes">Deployment notes</label>
+          <textarea id="deploy-notes" placeholder="Any special instructions for this deployment..." style="font-family:var(--font-body);font-size:13.5px;min-height:60px"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="form-footer">
+      <div class="footer-left">
+        <div class="validation-msg" id="val-msg">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span id="val-msg-text">Please fill all required fields.</span>
+        </div>
+      </div>
+      <div class="footer-right">
+        <button class="btn btn-ghost" onclick="saveDraft()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Save draft
+        </button>
+        <button class="btn btn-primary" id="deploy-btn" onclick="startDeployment()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Start deployment
+        </button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Success overlay -->
+<div class="success-overlay" id="success-overlay">
+  <div class="success-card">
+    <div class="success-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <p class="success-title">Deployment pipeline started</p>
+    <p class="success-desc">Your website and mobile app builds are queued. You'll receive a status update at the email address provided. Average build time: 8–12 minutes.</p>
+    <button class="success-close" onclick="document.getElementById('success-overlay').classList.remove('visible')">Close</button>
+  </div>
+</div>
+
+<script>
+  /* ── Upload handling ── */
+  function triggerUpload(id) { document.getElementById(id).click(); }
+
+  function handleUpload(input, zoneId, previewId) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    const zone = document.getElementById(zoneId);
+    const prev = document.getElementById(previewId);
+
+    zone.classList.add('has-file');
+    const nameEl = zone.querySelector('.upload-label');
+    if (nameEl) nameEl.textContent = file.name;
+
+    const reader = new FileReader();
+    reader.onload = e => {
+      prev.style.display = 'block';
+      prev.querySelector('img').src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+    updateProgress();
+  }
+
+  /* ── Progress ── */
+  const REQUIRED = ['org-name','org-email','domain','pkg-name','bundle-id','team-id'];
+
+  function updateProgress() {
+    const filled = REQUIRED.filter(id => {
+      const el = document.getElementById(id);
+      return el && el.value.trim() !== '';
+    }).length;
+    const pct = Math.round((filled / REQUIRED.length) * 100);
+    document.getElementById('prog-fill').style.width = pct + '%';
+    document.getElementById('prog-pct').textContent = pct + '%';
+  }
+
+  /* ── Sidebar active tracking ── */
+  const sections = ['sec-org','sec-web','sec-mobile','sec-assets','sec-analytics','sec-extra'];
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+        const link = document.querySelector(`.sidebar-nav a[data-section="${entry.target.id}"]`);
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { threshold: 0.35 });
+
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) observer.observe(el);
+  });
+
+  /* ── Validation ── */
+  function validate() {
+    const missing = REQUIRED.filter(id => {
+      const el = document.getElementById(id);
+      return !el || el.value.trim() === '';
+    });
+    if (missing.length > 0) {
+      REQUIRED.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('is-error', !el.value.trim());
+      });
+      const msgEl = document.getElementById('val-msg');
+      const msgText = document.getElementById('val-msg-text');
+      msgText.textContent = `${missing.length} required field${missing.length > 1 ? 's' : ''} missing. Scroll up to complete them.`;
+      msgEl.style.display = 'flex';
+      const firstMissing = document.getElementById(missing[0]);
+      if (firstMissing) firstMissing.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
+    document.getElementById('val-msg').style.display = 'none';
+    REQUIRED.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.classList.remove('is-error'); el.classList.add('is-valid'); }
+    });
+    return true;
+  }
+
+  /* ── Actions ── */
+  function startDeployment() {
+    if (!validate()) return;
+    document.getElementById('success-overlay').classList.add('visible');
+  }
+
+  function saveDraft() {
+    const btn = document.querySelector('.header-save');
+    btn.textContent = 'Saved ✓';
+    btn.style.color = 'var(--success)';
+    setTimeout(() => { btn.textContent = 'Save draft'; btn.style.color = ''; }, 2000);
+  }
+
+  /* ── Clear error on input ── */
+  REQUIRED.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', () => {
+      el.classList.remove('is-error');
+      if (el.value.trim()) el.classList.add('is-valid');
+      else el.classList.remove('is-valid');
+    });
+  });
+</script>
+</body>
+</html>

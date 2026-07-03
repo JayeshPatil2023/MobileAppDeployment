@@ -1,0 +1,28 @@
+@model MobileAppDeployment.Models.AppDeployment
+
+<div class="section" id="sec-identifiers">
+    <div class="section-header">
+        <div class="section-icon icon-identifiers">
+            <svg viewBox="0 0 24 24"><path d="M2 12C2 6.48 6.48 2 12 2s10 4.48 10 10-4.48 10-10 10S2 17.52 2 12z"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <div class="section-title-group">
+            <div class="section-title">App identifiers</div>
+            <div class="section-desc">iOS bundle and Apple Developer team identifiers</div>
+        </div>
+    </div>
+    <div class="section-body">
+        <div class="grid-2">
+            <div class="field">
+                <label asp-for="IosBundleId" class="field-label">iOS Bundle ID <span class="required">*</span></label>
+                <input asp-for="IosBundleId" class="form-input mono-input" placeholder="com.company.app" />
+                <span asp-validation-for="IosBundleId" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="AppleTeamId" class="field-label">Apple Team ID <span class="required">*</span></label>
+                <input asp-for="AppleTeamId" class="form-input mono-input" placeholder="8F9J2L34KN" maxlength="10" />
+                <span asp-validation-for="AppleTeamId" class="field-error"></span>
+                <span class="field-hint">10-character alphanumeric ID from Apple Developer membership.</span>
+            </div>
+        </div>
+    </div>
+</div>

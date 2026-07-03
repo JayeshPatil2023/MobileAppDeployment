@@ -1,0 +1,64 @@
+@model IEnumerable<MobileAppDeployment.Models.AppDeployment>
+@{
+    ViewData["Title"] = "App Deployments";
+}
+
+<div class="page-header-row">
+    <div>
+        <p class="page-title" style="margin-bottom:0">App deployments</p>
+        <p class="page-sub" style="margin-bottom:0">Manage mobile app store submission configurations</p>
+    </div>
+    <a asp-action="Create" class="btn btn-primary">+ New deployment</a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert-banner alert-banner--success" role="alert">
+        <span>@TempData["SuccessMessage"]</span>
+        <button type="button" class="alert-close" data-dismiss="alert" aria-label="Close">&times;</button>
+    </div>
+}
+
+@if (!Model.Any())
+{
+    <div class="empty-state">
+        <p>No app deployments yet. Create your first submission configuration to get started.</p>
+        <a asp-action="Create" class="btn btn-primary">Create deployment</a>
+    </div>
+}
+else
+{
+    <div class="data-card">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>App name</th>
+                    <th>Common name</th>
+                    <th>Organization</th>
+                    <th>Contact</th>
+                    <th>Created</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td><strong>@item.AppName</strong></td>
+                        <td class="cell-muted">@item.CommonName</td>
+                        <td class="cell-muted">@item.OrganizationName</td>
+                        <td class="cell-muted">@item.ContactFirstName @item.ContactLastName</td>
+                        <td class="cell-muted">@item.CreatedDate.ToString("MMM d, yyyy")</td>
+                        <td>
+                            <div class="table-actions">
+                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline">Details</a>
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-primary">Edit</a>
+                                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline btn-outline--danger">Delete</a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

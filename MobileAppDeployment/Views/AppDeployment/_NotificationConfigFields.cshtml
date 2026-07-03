@@ -1,0 +1,89 @@
+@model MobileAppDeployment.Models.AppDeployment
+@{
+    var isEdit = Model.Id > 0;
+}
+
+<div class="section" id="sec-onesignal">
+    <div class="section-header">
+        <div class="section-icon icon-onesignal">
+            <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        </div>
+        <div class="section-title-group">
+            <div class="section-title">OneSignal notification section</div>
+            <div class="section-desc">Push notification credentials from your OneSignal app</div>
+        </div>
+    </div>
+    <div class="section-body">
+        <div class="grid-3">
+            <div class="field">
+                <label asp-for="OneSignalSenderId" class="field-label">Sender ID <span class="required">*</span></label>
+                <input asp-for="OneSignalSenderId" class="form-input mono-input" placeholder="Enter Sender ID" />
+                <span asp-validation-for="OneSignalSenderId" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="OneSignalAppId" class="field-label">App ID <span class="required">*</span></label>
+                <input asp-for="OneSignalAppId" class="form-input mono-input" placeholder="Enter App ID" />
+                <span asp-validation-for="OneSignalAppId" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="OneSignalRestApiKey" class="field-label">Rest API Key <span class="required">*</span></label>
+                @if (isEdit)
+                {
+                    <input asp-for="OneSignalRestApiKey" class="form-input mono-input" type="password" placeholder="Leave blank to keep existing" />
+                }
+                else
+                {
+                    <input asp-for="OneSignalRestApiKey" class="form-input mono-input" type="password" placeholder="Enter Rest API Key" required />
+                }
+                <span asp-validation-for="OneSignalRestApiKey" class="field-error"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="section" id="sec-firebase">
+    <div class="section-header">
+        <div class="section-icon icon-firebase">
+            <svg viewBox="0 0 24 24"><path d="M7 18l-4-4 4-4"/><path d="M17 6l4 4-4 4"/><path d="M14 4l-4 16"/></svg>
+        </div>
+        <div class="section-title-group">
+            <div class="section-title">Firebase config</div>
+            <div class="section-desc">Upload platform configuration files from Firebase console</div>
+        </div>
+        <span class="section-badge badge-required">Required</span>
+    </div>
+    <div class="section-body">
+        <div class="config-upload-stack">
+            <div class="config-upload-item">
+                <div class="upload-zone config-upload-zone @(string.IsNullOrEmpty(Model.FirebaseIosConfigPath) ? "" : "has-file")"
+                     data-upload-zone="firebaseIosConfigFile" data-upload-type="config">
+                    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    <span class="upload-label">GoogleService-Info.plist</span>
+                    <span class="upload-spec">Drag and drop or click to upload for iOS</span>
+                    <span class="upload-filename"></span>
+                    <span class="upload-status @(string.IsNullOrEmpty(Model.FirebaseIosConfigPath) ? "upload-status--pending" : "upload-status--ok")">
+                        @(string.IsNullOrEmpty(Model.FirebaseIosConfigPath) ? "Awaiting upload" : "File detected")
+                    </span>
+                </div>
+                <input type="file" id="firebaseIosConfigFile" name="firebaseIosConfigFile" class="file-hidden"
+                       accept=".plist" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.FirebaseIosConfigPath) ? "true" : "false")" @(!isEdit ? "required" : null) />
+                <span class="field-error field-validation-valid" data-valmsg-for="firebaseIosConfigFile" data-valmsg-replace="true"></span>
+            </div>
+            <div class="config-upload-item">
+                <div class="upload-zone config-upload-zone @(string.IsNullOrEmpty(Model.FirebaseAndroidConfigPath) ? "" : "has-file")"
+                     data-upload-zone="firebaseAndroidConfigFile" data-upload-type="config">
+                    <svg viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                    <span class="upload-label">google-services.json</span>
+                    <span class="upload-spec">Drag and drop or click to upload for Android</span>
+                    <span class="upload-filename"></span>
+                    <span class="upload-status @(string.IsNullOrEmpty(Model.FirebaseAndroidConfigPath) ? "upload-status--pending" : "upload-status--ok")">
+                        @(string.IsNullOrEmpty(Model.FirebaseAndroidConfigPath) ? "Awaiting upload" : "File detected")
+                    </span>
+                </div>
+                <input type="file" id="firebaseAndroidConfigFile" name="firebaseAndroidConfigFile" class="file-hidden"
+                       accept=".json,application/json" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.FirebaseAndroidConfigPath) ? "true" : "false")" @(!isEdit ? "required" : null) />
+                <span class="field-error field-validation-valid" data-valmsg-for="firebaseAndroidConfigFile" data-valmsg-replace="true"></span>
+            </div>
+        </div>
+    </div>
+</div>
