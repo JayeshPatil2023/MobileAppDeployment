@@ -106,11 +106,6 @@
     <div class="section-body">
         <div class="asset-preview-grid">
             <div class="asset-preview-card">
-                <div class="detail-label">Website logo</div>
-                @if (!string.IsNullOrEmpty(Model.WebsiteLogoPath)) { <img src="@Model.WebsiteLogoPath" alt="Website logo" /> }
-                else { <div class="detail-value" style="color:var(--text-muted)">Not uploaded</div> }
-            </div>
-            <div class="asset-preview-card">
                 <div class="detail-label">Mobile app icon</div>
                 @if (!string.IsNullOrEmpty(Model.MobileAppIconPath)) { <img src="@Model.MobileAppIconPath" alt="Mobile app icon" /> }
                 else { <div class="detail-value" style="color:var(--text-muted)">Not uploaded</div> }

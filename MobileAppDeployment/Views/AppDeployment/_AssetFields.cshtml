@@ -25,34 +25,6 @@
             </div>
             <div class="asset-grid">
                 <div class="asset-item">
-                    <div class="asset-label">Website logo <span class="required">*</span> <span class="spec-badge">1024 × 1024</span></div>
-                    <div class="upload-zone @(string.IsNullOrEmpty(Model.WebsiteLogoPath) ? "" : "has-file")"
-                         data-upload-zone="websiteLogoFile" data-preview="prev-website-logo">
-                        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        <span class="upload-label">Click to upload PNG</span>
-                        <span class="upload-spec">1024 × 1024 · PNG</span>
-                        <span class="upload-filename"></span>
-                    </div>
-                    <input type="file" id="websiteLogoFile" name="websiteLogoFile" class="file-hidden"
-                           accept=".png,image/png" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.WebsiteLogoPath) ? "true" : "false")" @(!isEdit ? "required" : null) />
-                    <div class="preview-wrap @(string.IsNullOrEmpty(Model.WebsiteLogoPath) ? "" : "visible")" id="prev-website-logo">
-                        @if (!string.IsNullOrEmpty(Model.WebsiteLogoPath))
-                        {
-                            <img src="@Model.WebsiteLogoPath" alt="Website logo preview" />
-                        }
-                        else
-                        {
-                            <img alt="Website logo preview" />
-                        }
-                    </div>
-                    <span class="field-error field-validation-valid" data-valmsg-for="websiteLogoFile" data-valmsg-replace="true"></span>
-                    <span class="field-hint" style="margin-top:6px;display:block">Used as favicon and OG image. Auto-resized for web sizes.</span>
-                    @if (isEdit && !string.IsNullOrEmpty(Model.WebsiteLogoPath))
-                    {
-                        <div class="existing-file-note">Current file uploaded. Leave empty to keep existing.</div>
-                    }
-                </div>
-                <div class="asset-item">
                     <div class="asset-label">Mobile app icon <span class="required">*</span> <span class="spec-badge">1024 × 1024</span></div>
                     <div class="upload-zone @(string.IsNullOrEmpty(Model.MobileAppIconPath) ? "" : "has-file")"
                          data-upload-zone="mobileAppIconFile" data-preview="prev-mobile-icon">

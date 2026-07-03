@@ -37,7 +37,6 @@ public class AppDeploymentController : Controller
     [RequestSizeLimit(52_428_800)]
     public async Task<IActionResult> Create(
         AppDeployment model,
-        IFormFile? websiteLogoFile,
         IFormFile? mobileAppIconFile,
         IFormFile? launchImageFile,
         IFormFile? storeIconFile,
@@ -48,7 +47,6 @@ public class AppDeploymentController : Controller
         ValidateRequiredFiles(
             ModelState,
             isEdit: false,
-            websiteLogoFile,
             mobileAppIconFile,
             launchImageFile,
             storeIconFile,
@@ -64,7 +62,7 @@ public class AppDeploymentController : Controller
         try
         {
             int id = await _service.CreateAsync(model);
-            await SaveUploadedFilesAsync(id, model, websiteLogoFile, mobileAppIconFile, launchImageFile, storeIconFile, featureGraphicFile, firebaseIosConfigFile, firebaseAndroidConfigFile);
+            await SaveUploadedFilesAsync(id, model, mobileAppIconFile, launchImageFile, storeIconFile, featureGraphicFile, firebaseIosConfigFile, firebaseAndroidConfigFile);
             await _service.UpdateAsync(model);
         }
         catch (InvalidOperationException ex)
@@ -106,7 +104,6 @@ public class AppDeploymentController : Controller
     public async Task<IActionResult> Edit(
         int id,
         AppDeployment model,
-        IFormFile? websiteLogoFile,
         IFormFile? mobileAppIconFile,
         IFormFile? launchImageFile,
         IFormFile? storeIconFile,
@@ -139,7 +136,7 @@ public class AppDeploymentController : Controller
 
         try
         {
-            await SaveUploadedFilesAsync(id, model, websiteLogoFile, mobileAppIconFile, launchImageFile, storeIconFile, featureGraphicFile, firebaseIosConfigFile, firebaseAndroidConfigFile);
+            await SaveUploadedFilesAsync(id, model, mobileAppIconFile, launchImageFile, storeIconFile, featureGraphicFile, firebaseIosConfigFile, firebaseAndroidConfigFile);
             bool updated = await _service.UpdateAsync(model);
             if (!updated)
             {
@@ -186,7 +183,6 @@ public class AppDeploymentController : Controller
     private static void ValidateRequiredFiles(
         ModelStateDictionary modelState,
         bool isEdit,
-        IFormFile? websiteLogoFile,
         IFormFile? mobileAppIconFile,
         IFormFile? launchImageFile,
         IFormFile? storeIconFile,
@@ -197,11 +193,6 @@ public class AppDeploymentController : Controller
         if (isEdit)
         {
             return;
-        }
-
-        if (websiteLogoFile is null || websiteLogoFile.Length == 0)
-        {
-            modelState.AddModelError("websiteLogoFile", "Website logo is required.");
         }
 
         if (mobileAppIconFile is null || mobileAppIconFile.Length == 0)
@@ -237,7 +228,6 @@ public class AppDeploymentController : Controller
 
     private static void PreserveExistingPaths(AppDeployment model, AppDeployment existing)
     {
-        model.WebsiteLogoPath ??= existing.WebsiteLogoPath;
         model.MobileAppIconPath ??= existing.MobileAppIconPath;
         model.LaunchImagePath ??= existing.LaunchImagePath;
         model.StoreIconPath ??= existing.StoreIconPath;
@@ -254,7 +244,6 @@ public class AppDeploymentController : Controller
     private async Task SaveUploadedFilesAsync(
         int deploymentId,
         AppDeployment model,
-        IFormFile? websiteLogoFile,
         IFormFile? mobileAppIconFile,
         IFormFile? launchImageFile,
         IFormFile? storeIconFile,
@@ -262,11 +251,6 @@ public class AppDeploymentController : Controller
         IFormFile? firebaseIosConfigFile,
         IFormFile? firebaseAndroidConfigFile)
     {
-        if (websiteLogoFile is { Length: > 0 })
-        {
-            model.WebsiteLogoPath = await _assetStorage.SaveAssetAsync(deploymentId, websiteLogoFile, "website-logo", PngOnly);
-        }
-
         if (mobileAppIconFile is { Length: > 0 })
         {
             model.MobileAppIconPath = await _assetStorage.SaveAssetAsync(deploymentId, mobileAppIconFile, "mobile-app-icon", PngOnly);

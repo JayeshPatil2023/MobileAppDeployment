@@ -130,9 +130,6 @@ public class AppDeployment
 
     // Assets (stored file paths)
     [StringLength(500)]
-    public string? WebsiteLogoPath { get; set; }
-
-    [StringLength(500)]
     public string? MobileAppIconPath { get; set; }
 
     [StringLength(500)]
