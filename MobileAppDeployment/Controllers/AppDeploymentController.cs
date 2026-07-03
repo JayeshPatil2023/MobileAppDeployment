@@ -10,7 +10,7 @@ public class AppDeploymentController : Controller
     private static readonly string[] PngOnly = [".png"];
     private static readonly string[] PngOrJpeg = [".png", ".jpg", ".jpeg"];
     private static readonly string[] PlistOnly = [".plist"];
-    private static readonly string[] JsonOnly = [".json"]; // test comment
+    private static readonly string[] JsonOnly = [".json"];
 
     private readonly IAppDeploymentService _service;
     private readonly IAssetStorageService _assetStorage;
