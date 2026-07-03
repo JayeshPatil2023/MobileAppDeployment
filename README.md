@@ -2,6 +2,8 @@
 
 ASP.NET Core MVC app for saving mobile app deployment details. Uses **Entity Framework Core** with the **Service → Repository** pattern.
 
+**Beginner guide:** See [docs/ENTITY-FRAMEWORK-CORE-GUIDE.md](docs/ENTITY-FRAMEWORK-CORE-GUIDE.md) for step-by-step instructions on adding/removing fields, entities, relationships, and applying migrations (with examples from this project).
+
 ---
 
 ## Entity Framework Core Commands
