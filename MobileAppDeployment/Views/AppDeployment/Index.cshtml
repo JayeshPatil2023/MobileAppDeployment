@@ -19,6 +19,14 @@
     </div>
 }
 
+@if (TempData["WarningMessage"] != null)
+{
+    <div class="alert-banner alert-banner--warn" role="alert">
+        <span>@TempData["WarningMessage"]</span>
+        <button type="button" class="alert-close" data-dismiss="alert" aria-label="Close">&times;</button>
+    </div>
+}
+
 @if (!Model.Any())
 {
     <div class="empty-state">

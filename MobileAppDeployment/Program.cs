@@ -1,4 +1,5 @@
 using MobileAppDeployment.Services;
+using MobileAppDeployment.Services.GitHub;
 using MobileAppDeployment.Repositories;
 using MobileAppDeployment.Data;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +14,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql
 builder.Services.AddScoped<IAppDeploymentRepository, AppDeploymentRepository>();
 builder.Services.AddScoped<IAppDeploymentService,AppDeploymentService>();
 builder.Services.AddScoped<IAssetStorageService, AssetStorageService>();
+builder.Services.Configure<GitHubOptions>(builder.Configuration.GetSection(GitHubOptions.SectionName));
+builder.Services.AddScoped<IGitHubRepositoryService, GitHubRepositoryService>();
 
 var app = builder.Build();
 

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using MobileAppDeployment.Models;
 using MobileAppDeployment.Services;
+using MobileAppDeployment.Services.GitHub;
 
 namespace MobileAppDeployment.Controllers;
 
@@ -14,11 +15,19 @@ public class AppDeploymentController : Controller
 
     private readonly IAppDeploymentService _service;
     private readonly IAssetStorageService _assetStorage;
+    private readonly IGitHubRepositoryService _gitHubRepositoryService;
+    private readonly ILogger<AppDeploymentController> _logger;
 
-    public AppDeploymentController(IAppDeploymentService service, IAssetStorageService assetStorage)
+    public AppDeploymentController(
+        IAppDeploymentService service,
+        IAssetStorageService assetStorage,
+        IGitHubRepositoryService gitHubRepositoryService,
+        ILogger<AppDeploymentController> logger)
     {
         _service = service;
         _assetStorage = assetStorage;
+        _gitHubRepositoryService = gitHubRepositoryService;
+        _logger = logger;
     }
 
     public async Task<IActionResult> Index()
@@ -64,6 +73,25 @@ public class AppDeploymentController : Controller
             int id = await _service.CreateAsync(model);
             await SaveUploadedFilesAsync(id, model, mobileAppIconFile, launchImageFile, storeIconFile, featureGraphicFile, firebaseIosConfigFile, firebaseAndroidConfigFile);
             await _service.UpdateAsync(model);
+
+            GitHubRepositoryResult gitHubResult = await _gitHubRepositoryService.CreateClientRepositoryAsync(model);
+            if (gitHubResult.Success)
+            {
+                TempData["SuccessMessage"] =
+                    $"App deployment details saved successfully. GitHub repository created: {gitHubResult.HtmlUrl}";
+            }
+            else
+            {
+                TempData["SuccessMessage"] = "App deployment details saved successfully.";
+                if (!string.IsNullOrWhiteSpace(gitHubResult.ErrorMessage))
+                {
+                    TempData["WarningMessage"] = $"GitHub repository was not created: {gitHubResult.ErrorMessage}";
+                    _logger.LogWarning(
+                        "Deployment {DeploymentId} saved but GitHub repo creation failed: {Error}",
+                        id,
+                        gitHubResult.ErrorMessage);
+                }
+            }
         }
         catch (InvalidOperationException ex)
         {
@@ -71,7 +99,6 @@ public class AppDeploymentController : Controller
             return View(model);
         }
 
-        TempData["SuccessMessage"] = "App deployment details saved successfully.";
         return RedirectToAction(nameof(Index));
     }
 
