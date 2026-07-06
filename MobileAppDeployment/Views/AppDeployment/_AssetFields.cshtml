@@ -25,7 +25,10 @@
             </div>
             <div class="asset-grid">
                 <div class="asset-item">
-                    <div class="asset-label">Mobile app icon <span class="required">*</span> <span class="spec-badge">1024 × 1024</span></div>
+                    <div class="field-label-wrap field-label-wrap--asset">
+                        <div class="asset-label">Mobile app icon <span class="required">*</span> <span class="spec-badge">1024 × 1024</span></div>
+                        <field-help key="mobileAppIconFile" />
+                    </div>
                     <div class="upload-zone @(string.IsNullOrEmpty(Model.MobileAppIconPath) ? "" : "has-file")"
                          data-upload-zone="mobileAppIconFile" data-preview="prev-mobile-icon">
                         <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -63,7 +66,10 @@
                 <span class="subsection-title">Splash screen</span>
             </div>
             <div style="max-width:340px">
-                <div class="asset-label">Launch image <span class="required">*</span> <span class="spec-badge">2732 × 2732</span></div>
+                <div class="field-label-wrap field-label-wrap--asset">
+                    <div class="asset-label">Launch image <span class="required">*</span> <span class="spec-badge">2732 × 2732</span></div>
+                    <field-help key="launchImageFile" />
+                </div>
                 <div class="upload-zone @(string.IsNullOrEmpty(Model.LaunchImagePath) ? "" : "has-file")"
                      data-upload-zone="launchImageFile" data-preview="prev-launch-image">
                     <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -101,7 +107,10 @@
             </div>
             <div class="asset-grid">
                 <div class="asset-item">
-                    <div class="asset-label">Store icon <span class="required">*</span> <span class="spec-badge">512 × 512</span></div>
+                    <div class="field-label-wrap field-label-wrap--asset">
+                        <div class="asset-label">Store icon <span class="required">*</span> <span class="spec-badge">512 × 512</span></div>
+                        <field-help key="storeIconFile" />
+                    </div>
                     <div class="upload-zone @(string.IsNullOrEmpty(Model.StoreIconPath) ? "" : "has-file")"
                          data-upload-zone="storeIconFile" data-preview="prev-store-icon">
                         <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -129,7 +138,10 @@
                     }
                 </div>
                 <div class="asset-item">
-                    <div class="asset-label">Feature graphic / banner <span class="required">*</span> <span class="spec-badge">1024 × 500</span></div>
+                    <div class="field-label-wrap field-label-wrap--asset">
+                        <div class="asset-label">Feature graphic / banner <span class="required">*</span> <span class="spec-badge">1024 × 500</span></div>
+                        <field-help key="featureGraphicFile" />
+                    </div>
                     <div class="upload-zone @(string.IsNullOrEmpty(Model.FeatureGraphicPath) ? "" : "has-file")"
                          data-upload-zone="featureGraphicFile" data-preview="prev-feature-graphic">
                         <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>

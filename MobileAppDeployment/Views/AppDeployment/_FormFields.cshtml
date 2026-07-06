@@ -14,43 +14,64 @@
     <div class="section-body">
         <div class="grid-2">
             <div class="field">
-                <label asp-for="CommonName" class="field-label">Common Name (CN) <span class="required">*</span></label>
+                <div class="field-label-wrap">
+                    <label asp-for="CommonName" class="field-label">Common Name (CN) <span class="required">*</span></label>
+                    <field-help key="CommonName" />
+                </div>
                 <input asp-for="CommonName" class="form-input mono-input" placeholder="www.domain.com or domain.com" />
                 <span asp-validation-for="CommonName" class="field-error"></span>
                 <span class="field-hint">Host name or domain name (CN).</span>
             </div>
             <div class="field">
-                <label asp-for="OrganizationUnit" class="field-label">Organization Unit (OU) <span class="required">*</span></label>
+                <div class="field-label-wrap">
+                    <label asp-for="OrganizationUnit" class="field-label">Organization Unit (OU) <span class="required">*</span></label>
+                    <field-help key="OrganizationUnit" />
+                </div>
                 <input asp-for="OrganizationUnit" class="form-input" placeholder="Department or organization unit" />
                 <span asp-validation-for="OrganizationUnit" class="field-error"></span>
             </div>
         </div>
         <div class="grid-2 spacer">
             <div class="field">
-                <label asp-for="OrganizationName" class="field-label">Organization Name (O) <span class="required">*</span></label>
+                <div class="field-label-wrap">
+                    <label asp-for="OrganizationName" class="field-label">Organization Name (O) <span class="required">*</span></label>
+                    <field-help key="OrganizationName" />
+                </div>
                 <input asp-for="OrganizationName" class="form-input" placeholder="Company name" />
                 <span asp-validation-for="OrganizationName" class="field-error"></span>
             </div>
             <div class="field">
-                <label asp-for="LocalityName" class="field-label">Locality / City (L) <span class="required">*</span></label>
+                <div class="field-label-wrap">
+                    <label asp-for="LocalityName" class="field-label">Locality / City (L) <span class="required">*</span></label>
+                    <field-help key="LocalityName" />
+                </div>
                 <input asp-for="LocalityName" class="form-input" placeholder="City or town name" />
                 <span asp-validation-for="LocalityName" class="field-error"></span>
             </div>
         </div>
         <div class="grid-3 spacer">
             <div class="field">
-                <label asp-for="StateName" class="field-label">State / Province (S) <span class="required">*</span></label>
+                <div class="field-label-wrap">
+                    <label asp-for="StateName" class="field-label">State / Province (S) <span class="required">*</span></label>
+                    <field-help key="StateName" />
+                </div>
                 <input asp-for="StateName" class="form-input" placeholder="Spell out full state name" />
                 <span asp-validation-for="StateName" class="field-error"></span>
             </div>
             <div class="field">
-                <label asp-for="Country" class="field-label">Country (C) <span class="required">*</span></label>
+                <div class="field-label-wrap">
+                    <label asp-for="Country" class="field-label">Country (C) <span class="required">*</span></label>
+                    <field-help key="Country" />
+                </div>
                 <input asp-for="Country" class="form-input mono-input" maxlength="2" placeholder="US" />
                 <span asp-validation-for="Country" class="field-error"></span>
                 <span class="field-hint">Two-letter code without punctuation.</span>
             </div>
             <div class="field">
-                <label asp-for="AdminEmail" class="field-label">Admin email <span class="required">*</span></label>
+                <div class="field-label-wrap">
+                    <label asp-for="AdminEmail" class="field-label">Admin email <span class="required">*</span></label>
+                    <field-help key="AdminEmail" />
+                </div>
                 <input asp-for="AdminEmail" class="form-input" type="email" />
                 <span asp-validation-for="AdminEmail" class="field-error"></span>
             </div>
@@ -71,19 +92,28 @@
     </div>
     <div class="section-body">
         <div class="field">
-            <label asp-for="AppName" class="field-label">App name <span class="required">*</span></label>
+            <div class="field-label-wrap">
+                <label asp-for="AppName" class="field-label">App name <span class="required">*</span></label>
+                <field-help key="AppName" />
+            </div>
             <input asp-for="AppName" class="form-input" maxlength="30" />
             <span asp-validation-for="AppName" class="field-error"></span>
             <span class="field-hint">Maximum 30 characters.</span>
         </div>
         <div class="field spacer">
-            <label asp-for="ShortDescription" class="field-label">Short description <span class="required">*</span></label>
+            <div class="field-label-wrap">
+                <label asp-for="ShortDescription" class="field-label">Short description <span class="required">*</span></label>
+                <field-help key="ShortDescription" />
+            </div>
             <input asp-for="ShortDescription" class="form-input" maxlength="80" />
             <span asp-validation-for="ShortDescription" class="field-error"></span>
             <span class="field-hint">Maximum 80 characters.</span>
         </div>
         <div class="field spacer">
-            <label asp-for="FullDescription" class="field-label">Full description <span class="required">*</span></label>
+            <div class="field-label-wrap">
+                <label asp-for="FullDescription" class="field-label">Full description <span class="required">*</span></label>
+                <field-help key="FullDescription" />
+            </div>
             <textarea asp-for="FullDescription" maxlength="4000"></textarea>
             <span asp-validation-for="FullDescription" class="field-error"></span>
             <span class="field-hint">Maximum 4000 characters.</span>
@@ -108,47 +138,71 @@
     <div class="section-body">
         <div class="grid-2">
             <div class="field">
-                <label asp-for="AppleName" class="field-label">Name <span class="required">*</span></label>
+                <div class="field-label-wrap">
+                    <label asp-for="AppleName" class="field-label">Name <span class="required">*</span></label>
+                    <field-help key="AppleName" />
+                </div>
                 <input asp-for="AppleName" class="form-input" maxlength="30" />
                 <span asp-validation-for="AppleName" class="field-error"></span>
             </div>
             <div class="field">
-                <label asp-for="AppleSubtitle" class="field-label">Subtitle <span class="required">*</span></label>
+                <div class="field-label-wrap">
+                    <label asp-for="AppleSubtitle" class="field-label">Subtitle <span class="required">*</span></label>
+                    <field-help key="AppleSubtitle" />
+                </div>
                 <input asp-for="AppleSubtitle" class="form-input" maxlength="30" />
                 <span asp-validation-for="AppleSubtitle" class="field-error"></span>
             </div>
         </div>
         <div class="field spacer">
-            <label asp-for="ApplePromotionalText" class="field-label">Promotional text</label>
+            <div class="field-label-wrap">
+                <label asp-for="ApplePromotionalText" class="field-label">Promotional text</label>
+                <field-help key="ApplePromotionalText" />
+            </div>
             <input asp-for="ApplePromotionalText" class="form-input" maxlength="170" />
             <span asp-validation-for="ApplePromotionalText" class="field-error"></span>
             <span class="field-hint">Maximum 170 characters. Optional.</span>
         </div>
         <div class="field spacer">
-            <label asp-for="AppleDescription" class="field-label">Description <span class="required">*</span></label>
+            <div class="field-label-wrap">
+                <label asp-for="AppleDescription" class="field-label">Description <span class="required">*</span></label>
+                <field-help key="AppleDescription" />
+            </div>
             <textarea asp-for="AppleDescription" maxlength="4000"></textarea>
             <span asp-validation-for="AppleDescription" class="field-error"></span>
         </div>
         <div class="field spacer">
-            <label asp-for="AppleKeywords" class="field-label">Keywords <span class="required">*</span></label>
+            <div class="field-label-wrap">
+                <label asp-for="AppleKeywords" class="field-label">Keywords <span class="required">*</span></label>
+                <field-help key="AppleKeywords" />
+            </div>
             <input asp-for="AppleKeywords" class="form-input" maxlength="100" />
             <span asp-validation-for="AppleKeywords" class="field-error"></span>
             <span class="field-hint">Maximum 100 characters, comma-separated.</span>
         </div>
         <div class="grid-2 spacer">
             <div class="field">
-                <label asp-for="AppleSupportUrl" class="field-label">Support URL</label>
+                <div class="field-label-wrap">
+                    <label asp-for="AppleSupportUrl" class="field-label">Support URL</label>
+                    <field-help key="AppleSupportUrl" />
+                </div>
                 <input asp-for="AppleSupportUrl" class="form-input" type="url" placeholder="https:// (optional)" />
                 <span asp-validation-for="AppleSupportUrl" class="field-error"></span>
             </div>
             <div class="field">
-                <label asp-for="AppleMarketingUrl" class="field-label">Marketing URL</label>
+                <div class="field-label-wrap">
+                    <label asp-for="AppleMarketingUrl" class="field-label">Marketing URL</label>
+                    <field-help key="AppleMarketingUrl" />
+                </div>
                 <input asp-for="AppleMarketingUrl" class="form-input" type="url" placeholder="https:// (optional)" />
                 <span asp-validation-for="AppleMarketingUrl" class="field-error"></span>
             </div>
         </div>
         <div class="field spacer">
-            <label asp-for="AppleCopyright" class="field-label">Copyright <span class="required">*</span></label>
+            <div class="field-label-wrap">
+                <label asp-for="AppleCopyright" class="field-label">Copyright <span class="required">*</span></label>
+                <field-help key="AppleCopyright" />
+            </div>
             <input asp-for="AppleCopyright" class="form-input" />
             <span asp-validation-for="AppleCopyright" class="field-error"></span>
         </div>
@@ -173,33 +227,50 @@
     <div class="section-body">
         <div class="grid-2">
             <div class="field">
-                <label asp-for="ContactFirstName" class="field-label">First name <span class="required">*</span></label>
+                <div class="field-label-wrap">
+                    <label asp-for="ContactFirstName" class="field-label">First name <span class="required">*</span></label>
+                    <field-help key="ContactFirstName" />
+                </div>
                 <input asp-for="ContactFirstName" class="form-input" />
                 <span asp-validation-for="ContactFirstName" class="field-error"></span>
             </div>
             <div class="field">
-                <label asp-for="ContactLastName" class="field-label">Last name <span class="required">*</span></label>
+                <div class="field-label-wrap">
+                    <label asp-for="ContactLastName" class="field-label">Last name <span class="required">*</span></label>
+                    <field-help key="ContactLastName" />
+                </div>
                 <input asp-for="ContactLastName" class="form-input" />
                 <span asp-validation-for="ContactLastName" class="field-error"></span>
             </div>
         </div>
         <div class="grid-2 spacer">
             <div class="field">
-                <label asp-for="ContactPhoneNumber" class="field-label">Phone number <span class="required">*</span></label>
+                <div class="field-label-wrap">
+                    <label asp-for="ContactPhoneNumber" class="field-label">Phone number <span class="required">*</span></label>
+                    <field-help key="ContactPhoneNumber" />
+                </div>
                 <input asp-for="ContactPhoneNumber" class="form-input" type="tel" />
                 <span asp-validation-for="ContactPhoneNumber" class="field-error"></span>
             </div>
             <div class="field">
-                <label asp-for="ContactEmailAddress" class="field-label">Email address <span class="required">*</span></label>
+                <div class="field-label-wrap">
+                    <label asp-for="ContactEmailAddress" class="field-label">Email address <span class="required">*</span></label>
+                    <field-help key="ContactEmailAddress" />
+                </div>
                 <input asp-for="ContactEmailAddress" class="form-input" type="email" />
                 <span asp-validation-for="ContactEmailAddress" class="field-error"></span>
             </div>
         </div>
         <div class="field spacer">
-            <label asp-for="PrivacyPolicyUrl" class="field-label">Privacy policy URL <span class="required">*</span></label>
+            <div class="field-label-wrap">
+                <label asp-for="PrivacyPolicyUrl" class="field-label">Privacy policy URL <span class="required">*</span></label>
+                <field-help key="PrivacyPolicyUrl" />
+            </div>
             <input asp-for="PrivacyPolicyUrl" class="form-input" type="url" placeholder="https:// (must have content)" />
             <span asp-validation-for="PrivacyPolicyUrl" class="field-error"></span>
             <span class="field-hint">Apple will reject if the privacy policy page is empty.</span>
         </div>
     </div>
 </div>
+
+<partial name="_FieldHelpModal" />

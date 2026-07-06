@@ -131,10 +131,67 @@
     });
   }
 
+  function initFieldHelp() {
+    const overlay = document.getElementById('field-help-overlay');
+    const titleEl = document.getElementById('field-help-title');
+    const bodyEl = document.getElementById('field-help-body');
+    const closeBtn = document.getElementById('field-help-close');
+    const dataEl = document.getElementById('field-help-data');
+
+    if (!overlay || !titleEl || !bodyEl || !dataEl) return;
+
+    let helpData = {};
+    try {
+      helpData = JSON.parse(dataEl.textContent || '{}');
+    } catch {
+      return;
+    }
+
+    let lastTrigger = null;
+
+    function closeHelp() {
+      overlay.hidden = true;
+      document.body.classList.remove('field-help-open');
+      if (lastTrigger) lastTrigger.focus();
+      lastTrigger = null;
+    }
+
+    function openHelp(key, trigger) {
+      const entry = helpData[key];
+      if (!entry) return;
+
+      lastTrigger = trigger;
+      titleEl.textContent = entry.Title || '';
+      bodyEl.textContent = entry.Body || '';
+      overlay.hidden = false;
+      document.body.classList.add('field-help-open');
+      closeBtn.focus();
+    }
+
+    document.querySelectorAll('.field-help-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openHelp(btn.dataset.fieldHelp, btn);
+      });
+    });
+
+    closeBtn?.addEventListener('click', closeHelp);
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeHelp();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (!overlay.hidden && e.key === 'Escape') closeHelp();
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     initSidebarScrollSpy();
     initUploadZones();
     initFormProgress();
     initAlertDismiss();
+    initFieldHelp();
   });
 })();

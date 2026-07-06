@@ -23,7 +23,10 @@
             <div class="grid-2">
                 <div class="field">
                     <div class="field-label-row">
-                        <label asp-for="AndroidPackageName" class="field-label">Package name <span class="required">*</span></label>
+                        <div class="field-label-wrap">
+                            <label asp-for="AndroidPackageName" class="field-label">Package name <span class="required">*</span></label>
+                            <field-help key="AndroidPackageName" />
+                        </div>
                         <a href="https://developer.android.com/studio/build/configure-app-module#set-application-id" class="field-doc-link" target="_blank" rel="noopener noreferrer">
                             Android docs
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
@@ -34,7 +37,10 @@
                     <span class="field-hint">Unique app ID on Google Play. Once published, this cannot change.</span>
                 </div>
                 <div class="field">
-                    <label asp-for="GooglePlayListingUrl" class="field-label">Google Play listing URL</label>
+                    <div class="field-label-wrap">
+                        <label asp-for="GooglePlayListingUrl" class="field-label">Google Play listing URL</label>
+                        <field-help key="GooglePlayListingUrl" />
+                    </div>
                     <input asp-for="GooglePlayListingUrl" class="form-input" type="url" placeholder="https://play.google.com/store/apps/details?id=com.acmecorp.app" />
                     <span asp-validation-for="GooglePlayListingUrl" class="field-error"></span>
                     <span class="field-hint">Leave blank if not yet published — the build pipeline will create a new listing.</span>
@@ -52,7 +58,10 @@
             <div class="grid-2">
                 <div class="field">
                     <div class="field-label-row">
-                        <label asp-for="IosBundleId" class="field-label">Bundle ID <span class="required">*</span></label>
+                        <div class="field-label-wrap">
+                            <label asp-for="IosBundleId" class="field-label">Bundle ID <span class="required">*</span></label>
+                            <field-help key="IosBundleId" />
+                        </div>
                         <a href="https://developer.apple.com/documentation/appstoreconnectapi/bundle_ids" class="field-doc-link" target="_blank" rel="noopener noreferrer">
                             App Store docs
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
@@ -64,7 +73,10 @@
                 </div>
                 <div class="field">
                     <div class="field-label-row">
-                        <label asp-for="AppleTeamId" class="field-label">Apple Team ID <span class="required">*</span></label>
+                        <div class="field-label-wrap">
+                            <label asp-for="AppleTeamId" class="field-label">Apple Team ID <span class="required">*</span></label>
+                            <field-help key="AppleTeamId" />
+                        </div>
                         <a href="https://developer.apple.com/account#MembershipDetailsCard" class="field-doc-link" target="_blank" rel="noopener noreferrer">
                             Find it
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>

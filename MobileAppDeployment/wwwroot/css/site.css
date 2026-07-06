@@ -383,6 +383,116 @@ a:hover { text-decoration: underline; }
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+.field-label-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.field-label-row .field-label-wrap { flex: 1; }
+.field-label-wrap--asset,
+.field-label-wrap--upload {
+  width: 100%;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+.field-help-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent-light);
+  color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .15s, color .15s;
+}
+.field-help-btn:hover {
+  background: var(--accent);
+  color: #fff;
+}
+.field-help-btn svg {
+  width: 24px;
+  height: 24px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.field-help-btn svg circle,
+.field-help-btn svg path,
+.field-help-btn svg line { vector-effect: non-scaling-stroke; }
+.field-help-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(15, 23, 42, .45);
+}
+.field-help-overlay[hidden] { display: none; }
+.field-help-dialog {
+  width: 100%;
+  max-width: 440px;
+  background: #fff;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, .15);
+  overflow: hidden;
+}
+.field-help-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--bg-sub);
+}
+.field-help-dialog-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.field-help-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.field-help-close:hover {
+  background: #fff;
+  color: var(--text-primary);
+}
+.field-help-close svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.field-help-dialog-body {
+  padding: 1.25rem;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
 .required { color: var(--danger); font-size: 11px; }
 .field-hint { font-size: 11.5px; color: var(--text-muted); line-height: 1.4; }
 .field-error,

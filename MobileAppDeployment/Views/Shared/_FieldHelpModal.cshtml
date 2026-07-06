@@ -1,0 +1,16 @@
+@using System.Text.Json
+@using MobileAppDeployment.Helpers
+
+<div class="field-help-overlay" id="field-help-overlay" hidden>
+    <div class="field-help-dialog" role="dialog" aria-modal="true" aria-labelledby="field-help-title">
+        <div class="field-help-dialog-header">
+            <h3 class="field-help-dialog-title" id="field-help-title"></h3>
+            <button type="button" class="field-help-close" id="field-help-close" aria-label="Close help">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="field-help-dialog-body" id="field-help-body"></div>
+    </div>
+</div>
+
+<script type="application/json" id="field-help-data">@Html.Raw(JsonSerializer.Serialize(FieldHelpTexts.All))</script>
