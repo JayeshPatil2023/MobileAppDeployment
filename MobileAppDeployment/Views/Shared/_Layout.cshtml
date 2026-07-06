@@ -18,7 +18,7 @@
     }
 
     <header class="site-header">
-        <div class="container">
+        <div class="header-inner">
             <a class="header-logo" asp-controller="AppDeployment" asp-action="Index">
                 <div class="logo-icon">
                     <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
@@ -38,26 +38,24 @@
         </div>
     </header>
 
-    <main role="main" class="site-main pb-3">
-        <div class="container-flud">
-            <div class="row">
-                @if (isFormLayout)
-                {
-                    <div class="col-12 col-md-2 mb-4 mb-md-0">
-                        <partial name="_FormSidebar" />
-                    </div>
-                    <div class="col-12 col-md-9">
-                        @RenderBody()
-                    </div>
-                }
-                else
-                {
-                    <div class="col-12">
-                        @RenderBody()
-                    </div>
-                }
+    <main role="main" class="site-main">
+        @if (isFormLayout)
+        {
+            <div class="form-shell">
+                <div class="form-shell__sidebar">
+                    <partial name="_FormSidebar" />
+                </div>
+                <div class="form-shell__content">
+                    @RenderBody()
+                </div>
             </div>
-        </div>
+        }
+        else
+        {
+            <div class="page-shell">
+                @RenderBody()
+            </div>
+        }
     </main>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
