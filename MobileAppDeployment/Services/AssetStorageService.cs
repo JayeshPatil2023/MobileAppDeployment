@@ -2,11 +2,15 @@ namespace MobileAppDeployment.Services;
 
 public class AssetStorageService : IAssetStorageService
 {
-    private readonly IWebHostEnvironment _environment;
+    private readonly IBlobService _blobService;
+    private readonly string _containerName;
 
-    public AssetStorageService(IWebHostEnvironment environment)
+    public AssetStorageService(IBlobService blobService, IConfiguration configuration)
     {
-        _environment = environment;
+        _blobService = blobService;
+        _containerName = (configuration["AzureBlobStorage:ClientAssetsContainerName"]
+            ?? throw new InvalidOperationException("AzureBlobStorage:ClientAssetsContainerName is not configured."))
+            .ToLowerInvariant();
     }
 
     public async Task<string?> SaveAssetAsync(int deploymentId, IFormFile file, string assetKey, IEnumerable<string> allowedExtensions)
@@ -23,29 +27,20 @@ public class AssetStorageService : IAssetStorageService
             throw new InvalidOperationException($"Invalid file type for {assetKey}. Allowed: {string.Join(", ", allowed)}.");
         }
 
-        var uploadDirectory = GetDeploymentDirectory(deploymentId);
-        Directory.CreateDirectory(uploadDirectory);
-
         var fileName = $"{assetKey}{extension}";
-        var physicalPath = Path.Combine(uploadDirectory, fileName);
+        var folderName = deploymentId.ToString();
 
-        await using var stream = new FileStream(physicalPath, FileMode.Create);
-        await file.CopyToAsync(stream);
+        var blobUrl = await _blobService.UploadFileAsync(file, _containerName, fileName, folderName);
+        if (string.IsNullOrWhiteSpace(blobUrl))
+        {
+            throw new InvalidOperationException($"Failed to upload {assetKey} to blob storage.");
+        }
 
-        return $"/uploads/{deploymentId}/{fileName}";
+        return blobUrl;
     }
 
     public Task DeleteDeploymentAssetsAsync(int deploymentId)
     {
-        var uploadDirectory = GetDeploymentDirectory(deploymentId);
-        if (Directory.Exists(uploadDirectory))
-        {
-            Directory.Delete(uploadDirectory, recursive: true);
-        }
-
-        return Task.CompletedTask;
+        return _blobService.DeleteFolderAsync(_containerName, deploymentId.ToString());
     }
-
-    private string GetDeploymentDirectory(int deploymentId) =>
-        Path.Combine(_environment.WebRootPath, "uploads", deploymentId.ToString());
 }

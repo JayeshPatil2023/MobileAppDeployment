@@ -12,6 +12,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql
 // Repository & Service registration
 builder.Services.AddScoped<IAppDeploymentRepository, AppDeploymentRepository>();
 builder.Services.AddScoped<IAppDeploymentService,AppDeploymentService>();
+builder.Services.AddScoped<IBlobService, BlobService>();
 builder.Services.AddScoped<IAssetStorageService, AssetStorageService>();
 
 var app = builder.Build();
