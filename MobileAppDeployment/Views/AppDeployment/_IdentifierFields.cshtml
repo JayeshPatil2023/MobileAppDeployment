@@ -1,29 +1,81 @@
 @model MobileAppDeployment.Models.AppDeployment
 
-<div class="section" id="sec-identifiers">
+<div class="section" id="sec-mobile-config">
     <div class="section-header">
-        <div class="section-icon icon-identifiers">
-            <svg viewBox="0 0 24 24"><path d="M2 12C2 6.48 6.48 2 12 2s10 4.48 10 10-4.48 10-10 10S2 17.52 2 12z"/><path d="M12 6v6l4 2"/></svg>
+        <div class="section-icon icon-mobile">
+            <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
         </div>
         <div class="section-title-group">
-            <div class="section-title">App identifiers</div>
-            <div class="section-desc">iOS bundle and Apple Developer team identifiers</div>
+            <div class="section-title">Mobile configuration</div>
+            <div class="section-desc">Android and iOS build identifiers. Must match your store registrations exactly.</div>
         </div>
         <span class="section-badge badge-required">Required</span>
     </div>
     <div class="section-body">
-        <div class="grid-2">
-            <div class="field">
-                <label asp-for="IosBundleId" class="field-label">iOS Bundle ID <span class="required">*</span></label>
-                <input asp-for="IosBundleId" class="form-input mono-input" placeholder="com.company.app" />
-                <span asp-validation-for="IosBundleId" class="field-error"></span>
+
+        <div class="subsection">
+            <div class="subsection-header">
+                <div class="subsection-icon sub-android">
+                    <svg viewBox="0 0 24 24"><path d="M6 18c0 .55.45 1 1 1h1v3.5a1.5 1.5 0 003 0V19h2v3.5a1.5 1.5 0 003 0V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 9.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm17 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM8.5 4.5l1-2M15.5 4.5l-1-2"/></svg>
+                </div>
+                <span class="subsection-title">Android settings</span>
             </div>
-            <div class="field">
-                <label asp-for="AppleTeamId" class="field-label">Apple Team ID <span class="required">*</span></label>
-                <input asp-for="AppleTeamId" class="form-input mono-input" placeholder="8F9J2L34KN" maxlength="10" />
-                <span asp-validation-for="AppleTeamId" class="field-error"></span>
-                <span class="field-hint">10-character alphanumeric ID from Apple Developer membership.</span>
+            <div class="grid-2">
+                <div class="field">
+                    <div class="field-label-row">
+                        <label asp-for="AndroidPackageName" class="field-label">Package name <span class="required">*</span></label>
+                        <a href="https://developer.android.com/studio/build/configure-app-module#set-application-id" class="field-doc-link" target="_blank" rel="noopener noreferrer">
+                            Android docs
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        </a>
+                    </div>
+                    <input asp-for="AndroidPackageName" class="form-input mono-input" placeholder="com.acmecorp.app" />
+                    <span asp-validation-for="AndroidPackageName" class="field-error"></span>
+                    <span class="field-hint">Unique app ID on Google Play. Once published, this cannot change.</span>
+                </div>
+                <div class="field">
+                    <label asp-for="GooglePlayListingUrl" class="field-label">Google Play listing URL</label>
+                    <input asp-for="GooglePlayListingUrl" class="form-input" type="url" placeholder="https://play.google.com/store/apps/details?id=com.acmecorp.app" />
+                    <span asp-validation-for="GooglePlayListingUrl" class="field-error"></span>
+                    <span class="field-hint">Leave blank if not yet published — the build pipeline will create a new listing.</span>
+                </div>
             </div>
         </div>
+
+        <div class="subsection">
+            <div class="subsection-header">
+                <div class="subsection-icon sub-ios">
+                    <svg viewBox="0 0 24 24"><path d="M12 20.94c1.5 0 2.75 1.06 4 1.06 3 0 6-8 6-12.22A4.91 4.91 0 0017 5c-2.22 0-4 1.44-5 2-1-.56-2.78-2-5-2a4.9 4.9 0 00-5 4.78C2 14 5 22 8 22c1.25 0 2.5-1.06 4-1.06z"/><path d="M10 2c1 .5 2 2 2 5"/></svg>
+                </div>
+                <span class="subsection-title">iOS settings</span>
+            </div>
+            <div class="grid-2">
+                <div class="field">
+                    <div class="field-label-row">
+                        <label asp-for="IosBundleId" class="field-label">Bundle ID <span class="required">*</span></label>
+                        <a href="https://developer.apple.com/documentation/appstoreconnectapi/bundle_ids" class="field-doc-link" target="_blank" rel="noopener noreferrer">
+                            App Store docs
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        </a>
+                    </div>
+                    <input asp-for="IosBundleId" class="form-input mono-input" placeholder="com.acmecorp.app" />
+                    <span asp-validation-for="IosBundleId" class="field-error"></span>
+                    <span class="field-hint">Must match exactly what's registered in App Store Connect.</span>
+                </div>
+                <div class="field">
+                    <div class="field-label-row">
+                        <label asp-for="AppleTeamId" class="field-label">Apple Team ID <span class="required">*</span></label>
+                        <a href="https://developer.apple.com/account#MembershipDetailsCard" class="field-doc-link" target="_blank" rel="noopener noreferrer">
+                            Find it
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        </a>
+                    </div>
+                    <input asp-for="AppleTeamId" class="form-input mono-input" placeholder="A1B2C3D4E5" maxlength="10" />
+                    <span asp-validation-for="AppleTeamId" class="field-error"></span>
+                    <span class="field-hint">10-character alphanumeric ID from your Apple Developer membership page.</span>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>

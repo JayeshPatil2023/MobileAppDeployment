@@ -288,6 +288,8 @@ a:hover { text-decoration: underline; }
 .icon-assets { background: #FDF4FF; } .icon-assets svg { stroke: #9333EA; }
 .icon-contact{ background: #FFF7ED; } .icon-contact svg{ stroke: #EA580C; }
 .icon-identifiers { background: #F0F9FF; } .icon-identifiers svg { stroke: #0284C7; }
+.icon-mobile { background: #FFF7ED; } .icon-mobile svg { stroke: #EA580C; }
+.icon-website { background: #F0FDF4; } .icon-website svg { stroke: #16A34A; }
 .icon-onesignal { background: #EEF2FF; } .icon-onesignal svg { stroke: #4F46E5; }
 .icon-firebase { background: #FFF7ED; } .icon-firebase svg { stroke: #EA580C; }
 .section-title-group { flex: 1; }
@@ -335,6 +337,8 @@ a:hover { text-decoration: underline; }
 .sub-logo   { background: #FDF4FF; } .sub-logo svg   { stroke: #7E22CE; }
 .sub-splash { background: #FFF7ED; } .sub-splash svg { stroke: #C2410C; }
 .sub-play   { background: #ECFDF5; } .sub-play svg   { stroke: #059669; }
+.sub-android { background: #ECFDF5; } .sub-android svg { stroke: #059669; }
+.sub-ios    { background: #F1F5F9; } .sub-ios svg    { stroke: #334155; }
 
 /* ── Grid ─────────────────────────────────────────────── */
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
@@ -351,6 +355,33 @@ a:hover { text-decoration: underline; }
   font-size: 12.5px;
   font-weight: 500;
   color: var(--text-secondary);
+}
+.field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.field-doc-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.field-doc-link:hover { text-decoration: underline; }
+.field-doc-link svg {
+  width: 11px;
+  height: 11px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 .required { color: var(--danger); font-size: 11px; }
 .field-hint { font-size: 11.5px; color: var(--text-muted); line-height: 1.4; }

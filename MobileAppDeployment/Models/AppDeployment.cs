@@ -141,7 +141,17 @@ public class AppDeployment
     [StringLength(500)]
     public string? FeatureGraphicPath { get; set; }
 
-    // App Identifiers
+    // Mobile configuration
+    [Required(ErrorMessage = "Package name is required.")]
+    [Display(Name = "Package name")]
+    [StringLength(255)]
+    public string AndroidPackageName { get; set; } = string.Empty;
+
+    [Display(Name = "Google Play listing URL")]
+    [StringLength(500)]
+    [Url(ErrorMessage = "Enter a valid URL.")]
+    public string? GooglePlayListingUrl { get; set; }
+
     [Required(ErrorMessage = "iOS Bundle ID is required.")]
     [Display(Name = "iOS Bundle ID")]
     [StringLength(255)]
@@ -151,6 +161,13 @@ public class AppDeployment
     [Display(Name = "Apple Team ID")]
     [StringLength(10, MinimumLength = 10, ErrorMessage = "Apple Team ID must be 10 characters.")]
     public string AppleTeamId { get; set; } = string.Empty;
+
+    // Website configuration
+    [Required(ErrorMessage = "Domain URL is required.")]
+    [Display(Name = "Domain")]
+    [StringLength(500)]
+    [Url(ErrorMessage = "Enter a valid URL.")]
+    public string DomainUrl { get; set; } = string.Empty;
 
     // OneSignal
     [Required(ErrorMessage = "Sender ID is required.")]

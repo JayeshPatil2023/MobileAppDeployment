@@ -56,17 +56,35 @@
 
 <div class="section">
     <div class="section-header">
-        <div class="section-icon icon-identifiers">
-            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <div class="section-icon icon-mobile">
+            <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
         </div>
         <div class="section-title-group">
-            <div class="section-title">App identifiers</div>
+            <div class="section-title">Mobile configuration</div>
         </div>
     </div>
     <div class="section-body">
         <div class="detail-grid">
+            <div class="detail-item"><div class="detail-label">Package name</div><div class="detail-value">@Model.AndroidPackageName</div></div>
+            <div class="detail-item"><div class="detail-label">Google Play listing URL</div><div class="detail-value">@(string.IsNullOrEmpty(Model.GooglePlayListingUrl) ? "—" : Model.GooglePlayListingUrl)</div></div>
             <div class="detail-item"><div class="detail-label">iOS Bundle ID</div><div class="detail-value">@Model.IosBundleId</div></div>
             <div class="detail-item"><div class="detail-label">Apple Team ID</div><div class="detail-value">@Model.AppleTeamId</div></div>
+        </div>
+    </div>
+</div>
+
+<div class="section">
+    <div class="section-header">
+        <div class="section-icon icon-website">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+        </div>
+        <div class="section-title-group">
+            <div class="section-title">Website configuration</div>
+        </div>
+    </div>
+    <div class="section-body">
+        <div class="detail-grid">
+            <div class="detail-item detail-item--full"><div class="detail-label">Domain</div><div class="detail-value">@Model.DomainUrl</div></div>
         </div>
     </div>
 </div>
