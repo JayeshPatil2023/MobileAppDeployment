@@ -29,4 +29,24 @@ public class GitHubWorkflowDispatchOptions
     /// Branch or tag ref to run the workflow on.
     /// </summary>
     public string Ref { get; set; } = "master";
+
+    /// <summary>
+    /// Default workflow input for client_name.
+    /// </summary>
+    public string ClientName { get; set; } = "BidMaster";
+
+    /// <summary>
+    /// Default workflow input for client_branch.
+    /// </summary>
+    public string ClientBranch { get; set; } = "master_dev";
+
+    /// <summary>
+    /// Default workflow input for source_name.
+    /// </summary>
+    public string SourceName { get; set; } = "SA_AWDemoMobile";
+
+    /// <summary>
+    /// Default workflow input for source_branch.
+    /// </summary>
+    public string SourceBranch { get; set; } = "master_client";
 }

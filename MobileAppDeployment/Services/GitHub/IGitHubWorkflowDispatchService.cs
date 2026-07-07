@@ -6,7 +6,7 @@ namespace MobileAppDeployment.Services.GitHub;
 public interface IGitHubWorkflowDispatchService
 {
     /// <summary>
-    /// Dispatches the configured workflow.
+    /// Dispatches the configured workflow with optional input overrides.
     /// </summary>
-    Task<GitHubWorkflowDispatchResult> TriggerAsync(CancellationToken cancellationToken = default);
+    Task<GitHubWorkflowDispatchResult> TriggerAsync(string? clientName = null, CancellationToken cancellationToken = default);
 }

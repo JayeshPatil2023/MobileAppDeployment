@@ -28,7 +28,7 @@ public class GitHubWorkflowDispatchService : IGitHubWorkflowDispatchService
     }
 
     /// <inheritdoc />
-    public async Task<GitHubWorkflowDispatchResult> TriggerAsync(CancellationToken cancellationToken = default)
+    public async Task<GitHubWorkflowDispatchResult> TriggerAsync(string? clientName = null, CancellationToken cancellationToken = default)
     {
         if (!_workflowOptions.Enabled)
         {
@@ -58,9 +58,25 @@ public class GitHubWorkflowDispatchService : IGitHubWorkflowDispatchService
         request.Headers.Accept.ParseAdd("application/vnd.github+json");
         request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
 
+        string effectiveClientName = string.IsNullOrWhiteSpace(clientName)
+            ? _workflowOptions.ClientName
+            : clientName.Trim();
+
+        if (string.IsNullOrWhiteSpace(effectiveClientName))
+        {
+            return GitHubWorkflowDispatchResult.Failed("Client name is required to trigger the workflow.");
+        }
+
         object payload = new
         {
-            @ref = _workflowOptions.Ref
+            @ref = _workflowOptions.Ref,
+            inputs = new
+            {
+                client_name = effectiveClientName,
+                client_branch = _workflowOptions.ClientBranch,
+                source_name = _workflowOptions.SourceName,
+                source_branch = _workflowOptions.SourceBranch
+            }
         };
 
         string json = JsonSerializer.Serialize(payload);
@@ -72,11 +88,12 @@ public class GitHubWorkflowDispatchService : IGitHubWorkflowDispatchService
             if (response.IsSuccessStatusCode)
             {
                 _logger.LogInformation(
-                    "Workflow dispatch triggered for {Owner}/{Repo} ({Workflow}) on ref {Ref}",
+                    "Workflow dispatch triggered for {Owner}/{Repo} ({Workflow}) on ref {Ref} with client {ClientName}",
                     _workflowOptions.Owner,
                     _workflowOptions.Repository,
                     _workflowOptions.Workflow,
-                    _workflowOptions.Ref);
+                    _workflowOptions.Ref,
+                    effectiveClientName);
 
                 return GitHubWorkflowDispatchResult.Succeeded("GitHub Actions workflow triggered successfully.");
             }

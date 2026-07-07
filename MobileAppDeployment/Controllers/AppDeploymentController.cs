@@ -179,10 +179,10 @@ public class AppDeploymentController : Controller
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> TriggerWorkflow(CancellationToken cancellationToken)
+    public async Task<IActionResult> TriggerWorkflow(string? clientName, CancellationToken cancellationToken)
     {
         GitHubWorkflowDispatchResult result =
-            await _gitHubWorkflowDispatchService.TriggerAsync(cancellationToken);
+            await _gitHubWorkflowDispatchService.TriggerAsync(clientName, cancellationToken);
 
         if (result.Success)
         {

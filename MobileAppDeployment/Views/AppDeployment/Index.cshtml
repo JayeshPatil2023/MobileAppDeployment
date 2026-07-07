@@ -11,6 +11,11 @@
     <div style="display:flex; gap:.5rem; align-items:center;">
         <form asp-action="TriggerWorkflow" method="post" style="margin:0;">
             @Html.AntiForgeryToken()
+            <input type="text"
+                   name="clientName"
+                   placeholder="Client name (e.g. BidMaster)"
+                   class="form-control"
+                   style="display:inline-block; width:240px; margin-right:.5rem;" />
             <button type="submit" class="btn btn-outline">Trigger Build Workflow</button>
         </form>
         <a asp-action="Create" class="btn btn-primary">+ New deployment</a>
