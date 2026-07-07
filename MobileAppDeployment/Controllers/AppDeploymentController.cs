@@ -16,6 +16,7 @@ public class AppDeploymentController : Controller
     private readonly IAppDeploymentService _service;
     private readonly IAssetStorageService _assetStorage;
     private readonly IGitHubRepositoryService _gitHubRepositoryService;
+    private readonly IGitHubWorkflowDispatchService _gitHubWorkflowDispatchService;
     private readonly IRepoMergeService _repoMergeService;
     private readonly RepoMergeOptions _repoMergeOptions;
     private readonly ILogger<AppDeploymentController> _logger;
@@ -24,6 +25,7 @@ public class AppDeploymentController : Controller
         IAppDeploymentService service,
         IAssetStorageService assetStorage,
         IGitHubRepositoryService gitHubRepositoryService,
+        IGitHubWorkflowDispatchService gitHubWorkflowDispatchService,
         IRepoMergeService repoMergeService,
         Microsoft.Extensions.Options.IOptions<RepoMergeOptions> repoMergeOptions,
         ILogger<AppDeploymentController> logger)
@@ -31,6 +33,7 @@ public class AppDeploymentController : Controller
         _service = service;
         _assetStorage = assetStorage;
         _gitHubRepositoryService = gitHubRepositoryService;
+        _gitHubWorkflowDispatchService = gitHubWorkflowDispatchService;
         _repoMergeService = repoMergeService;
         _repoMergeOptions = repoMergeOptions.Value;
         _logger = logger;
@@ -169,6 +172,28 @@ public class AppDeploymentController : Controller
             repositoryUrl = job.RepositoryUrl,
             clientRepoName = job.ClientRepoName
         });
+    }
+
+    /// <summary>
+    /// Triggers the configured GitHub Actions workflow on manual user request.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> TriggerWorkflow(CancellationToken cancellationToken)
+    {
+        GitHubWorkflowDispatchResult result =
+            await _gitHubWorkflowDispatchService.TriggerAsync(cancellationToken);
+
+        if (result.Success)
+        {
+            TempData["SuccessMessage"] = result.Message;
+        }
+        else
+        {
+            TempData["WarningMessage"] = result.Message;
+        }
+
+        return RedirectToAction(nameof(Index));
     }
 
     public async Task<IActionResult> Details(int id)

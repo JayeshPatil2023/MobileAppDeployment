@@ -8,7 +8,13 @@
         <p class="page-title" style="margin-bottom:0">App deployments</p>
         <p class="page-sub" style="margin-bottom:0">Manage mobile app store submission configurations</p>
     </div>
-    <a asp-action="Create" class="btn btn-primary">+ New deployment</a>
+    <div style="display:flex; gap:.5rem; align-items:center;">
+        <form asp-action="TriggerWorkflow" method="post" style="margin:0;">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-outline">Trigger Build Workflow</button>
+        </form>
+        <a asp-action="Create" class="btn btn-primary">+ New deployment</a>
+    </div>
 </div>
 
 @if (TempData["SuccessMessage"] != null)
