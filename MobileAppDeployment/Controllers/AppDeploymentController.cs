@@ -17,6 +17,7 @@ public class AppDeploymentController : Controller
     private readonly IAssetStorageService _assetStorage;
     private readonly IGitHubRepositoryService _gitHubRepositoryService;
     private readonly IGitHubWorkflowDispatchService _gitHubWorkflowDispatchService;
+    private readonly IWorkflowAssetStorageService _workflowAssetStorage;
     private readonly IRepoMergeService _repoMergeService;
     private readonly RepoMergeOptions _repoMergeOptions;
     private readonly ILogger<AppDeploymentController> _logger;
@@ -26,6 +27,7 @@ public class AppDeploymentController : Controller
         IAssetStorageService assetStorage,
         IGitHubRepositoryService gitHubRepositoryService,
         IGitHubWorkflowDispatchService gitHubWorkflowDispatchService,
+        IWorkflowAssetStorageService workflowAssetStorage,
         IRepoMergeService repoMergeService,
         Microsoft.Extensions.Options.IOptions<RepoMergeOptions> repoMergeOptions,
         ILogger<AppDeploymentController> logger)
@@ -34,6 +36,7 @@ public class AppDeploymentController : Controller
         _assetStorage = assetStorage;
         _gitHubRepositoryService = gitHubRepositoryService;
         _gitHubWorkflowDispatchService = gitHubWorkflowDispatchService;
+        _workflowAssetStorage = workflowAssetStorage;
         _repoMergeService = repoMergeService;
         _repoMergeOptions = repoMergeOptions.Value;
         _logger = logger;
@@ -175,22 +178,67 @@ public class AppDeploymentController : Controller
     }
 
     /// <summary>
-    /// Triggers the configured GitHub Actions workflow on manual user request.
+    /// Uploads logo/splash assets, stores them on the server, and triggers the GitHub Actions workflow.
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> TriggerWorkflow(string? clientName, CancellationToken cancellationToken)
+    [RequestSizeLimit(52_428_800)]
+    public async Task<IActionResult> TriggerWorkflow(
+        string? clientName,
+        IFormFile? logoFile,
+        IFormFile? splashFile,
+        CancellationToken cancellationToken)
     {
-        GitHubWorkflowDispatchResult result =
-            await _gitHubWorkflowDispatchService.TriggerAsync(clientName, cancellationToken);
-
-        if (result.Success)
+        if (logoFile is null || logoFile.Length == 0)
         {
-            TempData["SuccessMessage"] = result.Message;
+            TempData["WarningMessage"] = "Logo image is required to trigger the workflow.";
+            return RedirectToAction(nameof(Index));
         }
-        else
+
+        if (splashFile is null || splashFile.Length == 0)
         {
-            TempData["WarningMessage"] = result.Message;
+            TempData["WarningMessage"] = "Splash image is required to trigger the workflow.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (string.IsNullOrWhiteSpace(clientName))
+        {
+            TempData["WarningMessage"] = "Client name is required to trigger the workflow.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        try
+        {
+            string logoUrl = await _workflowAssetStorage.SaveAndGetPublicUrlAsync(
+                logoFile,
+                clientName,
+                "logo",
+                PngOnly);
+
+            string splashUrl = await _workflowAssetStorage.SaveAndGetPublicUrlAsync(
+                splashFile,
+                clientName,
+                "splash",
+                PngOnly);
+
+            GitHubWorkflowDispatchResult result = await _gitHubWorkflowDispatchService.TriggerAsync(
+                clientName,
+                logoUrl,
+                splashUrl,
+                cancellationToken);
+
+            if (result.Success)
+            {
+                TempData["SuccessMessage"] = result.Message;
+            }
+            else
+            {
+                TempData["WarningMessage"] = result.Message;
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            TempData["WarningMessage"] = ex.Message;
         }
 
         return RedirectToAction(nameof(Index));

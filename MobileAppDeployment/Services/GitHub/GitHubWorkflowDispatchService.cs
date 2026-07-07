@@ -28,7 +28,11 @@ public class GitHubWorkflowDispatchService : IGitHubWorkflowDispatchService
     }
 
     /// <inheritdoc />
-    public async Task<GitHubWorkflowDispatchResult> TriggerAsync(string? clientName = null, CancellationToken cancellationToken = default)
+    public async Task<GitHubWorkflowDispatchResult> TriggerAsync(
+        string? clientName,
+        string logoBlobUrl,
+        string splashBlobUrl,
+        CancellationToken cancellationToken = default)
     {
         if (!_workflowOptions.Enabled)
         {
@@ -67,6 +71,11 @@ public class GitHubWorkflowDispatchService : IGitHubWorkflowDispatchService
             return GitHubWorkflowDispatchResult.Failed("Client name is required to trigger the workflow.");
         }
 
+        if (string.IsNullOrWhiteSpace(logoBlobUrl) || string.IsNullOrWhiteSpace(splashBlobUrl))
+        {
+            return GitHubWorkflowDispatchResult.Failed("Logo and splash image URLs are required to trigger the workflow.");
+        }
+
         object payload = new
         {
             @ref = _workflowOptions.Ref,
@@ -75,7 +84,9 @@ public class GitHubWorkflowDispatchService : IGitHubWorkflowDispatchService
                 client_name = effectiveClientName,
                 client_branch = _workflowOptions.ClientBranch,
                 source_name = _workflowOptions.SourceName,
-                source_branch = _workflowOptions.SourceBranch
+                source_branch = _workflowOptions.SourceBranch,
+                logo_blob_url = logoBlobUrl,
+                splash_blob_url = splashBlobUrl
             }
         };
 

@@ -8,12 +8,14 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Repository & Service registration
 builder.Services.AddScoped<IAppDeploymentRepository, AppDeploymentRepository>();
 builder.Services.AddScoped<IAppDeploymentService,AppDeploymentService>();
 builder.Services.AddScoped<IAssetStorageService, AssetStorageService>();
+builder.Services.AddScoped<IWorkflowAssetStorageService, WorkflowAssetStorageService>();
 builder.Services.Configure<GitHubOptions>(builder.Configuration.GetSection(GitHubOptions.SectionName));
 builder.Services.Configure<RepoMergeOptions>(builder.Configuration.GetSection($"{GitHubOptions.SectionName}:RepoMerge"));
 builder.Services.Configure<GitHubWorkflowDispatchOptions>(builder.Configuration.GetSection($"{GitHubOptions.SectionName}:WorkflowDispatch"));

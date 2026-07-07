@@ -49,4 +49,10 @@ public class GitHubWorkflowDispatchOptions
     /// Default workflow input for source_branch.
     /// </summary>
     public string SourceBranch { get; set; } = "master_client";
+
+    /// <summary>
+    /// Public base URL of this app (for example https://deploy.example.com).
+    /// GitHub Actions runners must reach this URL to download uploaded logo/splash images.
+    /// </summary>
+    public string PublicBaseUrl { get; set; } = string.Empty;
 }

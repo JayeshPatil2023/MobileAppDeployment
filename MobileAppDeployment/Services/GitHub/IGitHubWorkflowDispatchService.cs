@@ -6,7 +6,11 @@ namespace MobileAppDeployment.Services.GitHub;
 public interface IGitHubWorkflowDispatchService
 {
     /// <summary>
-    /// Dispatches the configured workflow with optional input overrides.
+    /// Dispatches the configured workflow with client name and asset URLs for Update-GitHubAssets.ps1.
     /// </summary>
-    Task<GitHubWorkflowDispatchResult> TriggerAsync(string? clientName = null, CancellationToken cancellationToken = default);
+    Task<GitHubWorkflowDispatchResult> TriggerAsync(
+        string? clientName,
+        string logoBlobUrl,
+        string splashBlobUrl,
+        CancellationToken cancellationToken = default);
 }

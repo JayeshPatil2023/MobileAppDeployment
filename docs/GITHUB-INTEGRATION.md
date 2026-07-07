@@ -143,6 +143,60 @@ dotnet user-secrets set "GitHub:PersonalAccessToken" "ghp_your_token_here"
 
 Or set `GITHUB_TOKEN` in the environment used to launch IIS Express / Kestrel.
 
+### Workflow dispatch with logo/splash uploads
+
+The Index page **Trigger Build Workflow** form accepts:
+
+- Client name
+- Logo PNG
+- Splash PNG
+
+The app stores files under `wwwroot/uploads/workflow-assets/{clientName}/` and sends absolute URLs to GitHub as `logo_blob_url` and `splash_blob_url`.
+
+Set a publicly reachable base URL (required for GitHub Actions runners to download images):
+
+```json
+"GitHub": {
+  "WorkflowDispatch": {
+    "PublicBaseUrl": "https://your-deployed-app.example.com"
+  }
+}
+```
+
+If `PublicBaseUrl` is empty, the app uses the current request host (works only when GitHub can reach that URL — not `localhost`).
+
+Add these inputs to your workflow YAML:
+
+```yaml
+on:
+  workflow_dispatch:
+    inputs:
+      logo_blob_url:
+        description: "Public URL for logo PNG"
+        required: true
+        type: string
+      splash_blob_url:
+        description: "Public URL for splash PNG"
+        required: true
+        type: string
+```
+
+After `create_client_repo.ps1`, run `Update-GitHubAssets.ps1`:
+
+```yaml
+      - name: Update GitHub Assets
+        if: success()
+        shell: pwsh
+        run: |
+          ./Update-GitHubAssets.ps1 `
+            -GitHubToken "${{ secrets.GH_PAT }}" `
+            -Owner "systenics" `
+            -Repo "${{ inputs.client_name }}" `
+            -Branch "${{ inputs.client_branch }}" `
+            -LogoBlobUrl "${{ inputs.logo_blob_url }}" `
+            -SplashBlobUrl "${{ inputs.splash_blob_url }}"
+```
+
 ### Disable merge locally
 
 ```json

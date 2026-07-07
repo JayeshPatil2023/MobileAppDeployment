@@ -353,6 +353,19 @@ a:hover { text-decoration: underline; }
   margin-top: 1.5rem;
 }
 
+/* ── Workflow trigger form ───────────────────────────────────── */
+.workflow-trigger-form__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  align-items: end;
+}
+
+.workflow-trigger-form__action {
+  display: flex;
+  align-items: flex-end;
+}
+
 /* ── Section card ─────────────────────────────────────────────── */
 .section {
   background: var(--bg-card);
