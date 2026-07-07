@@ -32,6 +32,9 @@ public class GitHubWorkflowDispatchService : IGitHubWorkflowDispatchService
         string? clientName,
         string logoBlobUrl,
         string splashBlobUrl,
+        string appBundleId,
+        string appId,
+        string projectId,
         CancellationToken cancellationToken = default)
     {
         if (!_workflowOptions.Enabled)
@@ -76,6 +79,13 @@ public class GitHubWorkflowDispatchService : IGitHubWorkflowDispatchService
             return GitHubWorkflowDispatchResult.Failed("Logo and splash image URLs are required to trigger the workflow.");
         }
 
+        if (string.IsNullOrWhiteSpace(appBundleId) ||
+            string.IsNullOrWhiteSpace(appId) ||
+            string.IsNullOrWhiteSpace(projectId))
+        {
+            return GitHubWorkflowDispatchResult.Failed("App bundle ID, App ID, and Project ID are required to trigger the workflow.");
+        }
+
         object payload = new
         {
             @ref = _workflowOptions.Ref,
@@ -86,7 +96,10 @@ public class GitHubWorkflowDispatchService : IGitHubWorkflowDispatchService
                 source_name = _workflowOptions.SourceName,
                 source_branch = _workflowOptions.SourceBranch,
                 logo_blob_url = logoBlobUrl,
-                splash_blob_url = splashBlobUrl
+                splash_blob_url = splashBlobUrl,
+                app_bundle_id = appBundleId.Trim(),
+                app_id = appId.Trim(),
+                project_id = projectId.Trim()
             }
         };
 

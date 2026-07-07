@@ -1,0 +1,44 @@
+{
+  "release": {
+    "version": "4.4.8",
+    "bundleVersion": "1.0.0",
+    "appBundleId": "com.systenics.auctionworxevents",
+    "appName": "AuctionWorx Events Mobile",
+    "aiHostUrl": "awdev.systenics.ai",
+    "hostUrl": "aweventsdev.systenics.com",
+    "OneSignal": {
+      "AppId": "25deeaee-868e-4442-9938-1bb9a515bd35",
+      "ProjectId": "550372236800"
+    },
+    "appType": "Events",
+    "appRole": "Default",
+    "clientVersion": "1.0.0",
+    "systenicsVersion": "4.4.8",
+    "awVersion": "3.6.9398",
+    "copyright": "Copyright © 2018 - 2026 Systenics Solutions LLP",
+    "enableHomePageHeaderLogo": false,
+    "enableInnerPageHeaderLogo": true,
+    "encryptionEnabled": true
+  },
+  "debug": {
+    "version": "4.4.8",
+    "bundleVersion": "1.0.0",
+    "appBundleId": "com.systenics.auctionworxevents",
+    "appName": "AuctionWorx Events Mobile",
+    "aiHostUrl": "awdev.systenics.ai",
+    "hostUrl": "aweventsdev.systenics.com",
+    "OneSignal": {
+      "AppId": "25deeaee-868e-4442-9938-1bb9a515bd35",
+      "ProjectId": "550372236800"
+    },
+    "appType": "Events",
+    "appRole": "Default",
+    "clientVersion": "1.0.0",
+    "systenicsVersion": "4.4.8",
+    "awVersion": "3.6.9398",
+    "copyright": "Copyright © 2018 - 2026 Systenics Solutions LLP",
+    "enableHomePageHeaderLogo": false,
+    "enableInnerPageHeaderLogo": true,
+    "encryptionEnabled": true
+  }
+}

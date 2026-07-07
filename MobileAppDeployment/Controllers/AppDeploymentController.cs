@@ -187,6 +187,9 @@ public class AppDeploymentController : Controller
         string? clientName,
         IFormFile? logoFile,
         IFormFile? splashFile,
+        string? appBundleId,
+        string? appId,
+        string? projectId,
         CancellationToken cancellationToken)
     {
         if (logoFile is null || logoFile.Length == 0)
@@ -204,6 +207,24 @@ public class AppDeploymentController : Controller
         if (string.IsNullOrWhiteSpace(clientName))
         {
             TempData["WarningMessage"] = "Client name is required to trigger the workflow.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (string.IsNullOrWhiteSpace(appBundleId))
+        {
+            TempData["WarningMessage"] = "App bundle ID is required to trigger the workflow.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (string.IsNullOrWhiteSpace(appId))
+        {
+            TempData["WarningMessage"] = "OneSignal App ID is required to trigger the workflow.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (string.IsNullOrWhiteSpace(projectId))
+        {
+            TempData["WarningMessage"] = "OneSignal Project ID is required to trigger the workflow.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -225,6 +246,9 @@ public class AppDeploymentController : Controller
                 clientName,
                 logoUrl,
                 splashUrl,
+                appBundleId,
+                appId,
+                projectId,
                 cancellationToken);
 
             if (result.Success)

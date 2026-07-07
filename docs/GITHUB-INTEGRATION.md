@@ -150,6 +150,9 @@ The Index page **Trigger Build Workflow** form accepts:
 - Client name
 - Logo PNG
 - Splash PNG
+- App bundle ID (`appBundleId` in `build.environment.json`)
+- OneSignal App ID (`OneSignal.AppId`)
+- OneSignal Project ID (`OneSignal.ProjectId`)
 
 The app stores files under `wwwroot/uploads/workflow-assets/{clientName}/` and sends absolute URLs to GitHub as `logo_blob_url` and `splash_blob_url`.
 
@@ -269,9 +272,21 @@ on:
         description: "Public URL for splash PNG"
         required: true
         type: string
+      app_bundle_id:
+        description: "Android/iOS app bundle ID"
+        required: true
+        type: string
+      app_id:
+        description: "OneSignal App ID"
+        required: true
+        type: string
+      project_id:
+        description: "OneSignal Project ID"
+        required: true
+        type: string
 ```
 
-After `create_client_repo.ps1`, run `Update-GitHubAssets.ps1`:
+After `create_client_repo.ps1`, run `Update-GitHubAssets.ps1`, then `Update-BuildEnvironment.ps1`:
 
 ```yaml
       - name: Update GitHub Assets
@@ -285,7 +300,28 @@ After `create_client_repo.ps1`, run `Update-GitHubAssets.ps1`:
             -Branch "${{ inputs.client_branch }}" `
             -LogoBlobUrl "${{ inputs.logo_blob_url }}" `
             -SplashBlobUrl "${{ inputs.splash_blob_url }}"
+
+      - name: Update Build Environment
+        if: success()
+        shell: pwsh
+        run: |
+          ./Update-BuildEnvironment.ps1 `
+            -GitHubToken "${{ secrets.GH_PAT }}" `
+            -Owner "systenics" `
+            -Repo "${{ inputs.client_name }}" `
+            -Branch "${{ inputs.client_branch }}" `
+            -AppBundleId "${{ inputs.app_bundle_id }}" `
+            -AppId "${{ inputs.app_id }}" `
+            -ProjectId "${{ inputs.project_id }}"
 ```
+
+`Update-BuildEnvironment.ps1` updates `sys.config/build.environment.json` in the **client repo** (both `release` and `debug` sections):
+
+- `appBundleId`
+- `OneSignal.AppId`
+- `OneSignal.ProjectId`
+
+Copy `Scripts/Update-BuildEnvironment.ps1` into your workflow repository (`SA_BaseMVCProject`) alongside the other scripts.
 
 ### Disable merge locally
 
