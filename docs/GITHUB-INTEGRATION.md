@@ -165,6 +165,96 @@ Set a publicly reachable base URL (required for GitHub Actions runners to downlo
 
 If `PublicBaseUrl` is empty, the app uses the current request host (works only when GitHub can reach that URL — not `localhost`).
 
+### Local development with ngrok
+
+GitHub-hosted runners run in the cloud. They **cannot** reach:
+
+- `localhost` / `127.0.0.1`
+- Private LAN IPs (`192.168.x.x`, `10.x.x.x`)
+
+To test workflow asset uploads from your local machine, expose the app with **ngrok** and set `PublicBaseUrl` to the ngrok URL.
+
+#### 1. Run the app locally
+
+**Option A — Kestrel (recommended for ngrok)**
+
+```powershell
+cd c:\Applications\systenics\MobileAppDeployment\MobileAppDeployment
+dotnet run --launch-profile http
+```
+
+App listens at `http://localhost:5190`.
+
+**Option B — IIS Express**
+
+Uses `https://localhost:44391` (see `Properties/launchSettings.json`).
+
+#### 2. Start ngrok
+
+For Kestrel (HTTP):
+
+```powershell
+ngrok http http://localhost:5190
+```
+
+For IIS Express (HTTPS), add host-header rewrite (required — without it you get **400 Bad Request - Invalid Hostname**):
+
+```powershell
+ngrok http https://localhost:44391 --host-header=rewrite
+```
+
+Or explicitly:
+
+```powershell
+ngrok http https://localhost:44391 --host-header=localhost:44391
+```
+
+Copy the forwarding URL, e.g. `https://abc123.ngrok-free.dev`.
+
+#### 3. Configure PublicBaseUrl
+
+In `appsettings.json` or User Secrets:
+
+```json
+"GitHub": {
+  "WorkflowDispatch": {
+    "PublicBaseUrl": "https://abc123.ngrok-free.dev"
+  }
+}
+```
+
+Restart the app after changing this value.
+
+#### 4. Verify before triggering the workflow
+
+Open in a browser (ideally from mobile data, not your office Wi‑Fi):
+
+```
+https://abc123.ngrok-free.dev
+```
+
+After uploading assets via **Trigger Build Workflow**, test a direct file URL:
+
+```
+https://abc123.ngrok-free.dev/uploads/workflow-assets/BidMaster/logo.png
+```
+
+If the image loads, GitHub Actions can likely download it too.
+
+#### 5. ngrok free tier and GitHub Actions
+
+ngrok free tier may show a browser warning page to automated clients. `Update-GitHubAssets.ps1` sends the `ngrok-skip-browser-warning` header when downloading images. Keep the script in your workflow repo up to date.
+
+#### ngrok troubleshooting
+
+| Symptom | Fix |
+|---------|-----|
+| `400 Bad Request - Invalid Hostname` | Use `--host-header=rewrite` with IIS Express, or switch to `dotnet run --launch-profile http` |
+| Workflow runs but asset download fails | Confirm `PublicBaseUrl` matches current ngrok URL (URL changes each free session unless you use a reserved domain) |
+| `localhost` URLs sent to GitHub | Set `PublicBaseUrl`; do not rely on request host when testing locally |
+
+For production, deploy the app to a stable public URL and set `PublicBaseUrl` to that domain instead of ngrok.
+
 Add these inputs to your workflow YAML:
 
 ```yaml
@@ -241,5 +331,8 @@ Invalid names throw a validation error before the API call.
 | HTTP 401 / 403 | Token missing `repo` scope or expired |
 | HTTP 422 | Repository name already exists under JayeshPatil2023 |
 | Script not found | Rebuild project so `Scripts/` is copied to output |
+| `400 Bad Request - Invalid Hostname` via ngrok | Run ngrok with `--host-header=rewrite` for IIS Express |
+| GitHub workflow cannot download logo/splash | Set `PublicBaseUrl` to a public URL (ngrok or deployed server), not localhost |
+| `Update-GitHubAssets` 404 with `assets/=branch` in URL | PowerShell parsed `$RepoPath?ref` incorrectly; use updated script with `${RepoPath}?ref=${Branch}` |
 
 Check application logs for entries from `GitHubRepositoryService` and `AppDeploymentController`.
