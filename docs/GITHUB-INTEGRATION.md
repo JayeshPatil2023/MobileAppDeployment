@@ -119,6 +119,30 @@ $env:GITHUB_TOKEN = "ghp_your_token_here"
 
 The script emits `MERGE_PROGRESS:{json}` lines during execution and a final `MERGE_RESULT:{json}` line.
 
+### Non-interactive git (no credential popup)
+
+Repository **creation** uses the GitHub REST API with your PAT directly. Repository **merge** runs local `git` commands (clone, fetch, push). Those commands do **not** use the REST API token automatically.
+
+On Windows, Git Credential Manager (GCM) intercepts HTTPS git requests. If the stored `origin` remote URL has no embedded credentials, GCM opens the **"Select an account"** dialog — even when a PAT is configured in the app for API calls.
+
+The merge script prevents this by:
+
+1. Passing `GITHUB_TOKEN` from the app into the PowerShell process
+2. Setting `GIT_TERMINAL_PROMPT=0`, `GCM_INTERACTIVE=never`, and `GCM_PROMPT=never`
+3. Reconfiguring `origin` to `https://x-access-token:<PAT>@github.com/...` after clone
+4. Applying the same authenticated URL to the **source** remote (`systenics/SA_AWDemoMobile`) — required when the source repo is private
+5. Disabling the local credential helper so git uses the URL token only
+
+Your PAT must have **`repo` read access** to both the client repos under `JayeshPatil2023` and the source repo under `systenics`.
+
+Ensure the token is available to the **web app process** (not only your interactive PowerShell session):
+
+```powershell
+dotnet user-secrets set "GitHub:PersonalAccessToken" "ghp_your_token_here"
+```
+
+Or set `GITHUB_TOKEN` in the environment used to launch IIS Express / Kestrel.
+
 ### Disable merge locally
 
 ```json
@@ -158,6 +182,8 @@ Invalid names throw a validation error before the API call.
 | Symptom | Likely cause |
 |---------|----------------|
 | `GitHub token is not configured` | Set `GITHUB_TOKEN` or `GitHub:PersonalAccessToken` |
+| Git Credential Manager popup during merge | Token not passed to git child process; set User Secrets / env var and restart the app |
+| `GITHUB_TOKEN is not set` from merge script | Same as above — repo creation can work while merge git commands cannot |
 | HTTP 401 / 403 | Token missing `repo` scope or expired |
 | HTTP 422 | Repository name already exists under JayeshPatil2023 |
 | Script not found | Rebuild project so `Scripts/` is copied to output |

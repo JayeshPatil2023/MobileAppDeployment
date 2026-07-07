@@ -296,6 +296,11 @@ public class RepoMergeService : IRepoMergeService
             startInfo.Environment["GITHUB_TOKEN"] = token;
         }
 
+        // Prevent Git Credential Manager from opening interactive account-picker dialogs.
+        startInfo.Environment["GIT_TERMINAL_PROMPT"] = "0";
+        startInfo.Environment["GCM_INTERACTIVE"] = "never";
+        startInfo.Environment["GCM_PROMPT"] = "never";
+
         return startInfo;
     }
 
