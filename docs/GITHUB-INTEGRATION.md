@@ -83,8 +83,51 @@ Expected success output (last line):
 | 2 | `IGitHubRepositoryService.CreateClientRepositoryAsync` | Called immediately after successful save |
 | 3 | `GitHubRepositoryService` | Runs `Scripts/New-GitHubClientRepository.ps1` with `GITHUB_TOKEN` |
 | 4 | Redirect to Index | Success/warning message shown via `TempData` |
+| 5 | `IRepoMergeService.StartMergeJob` | When repo merge is enabled, merges source into client repo |
+| 6 | `MergeProgress` view | Live progress bar polled via `MergeStatus` API |
 
 **Important:** GitHub creation runs only on **Create**, not **Edit**. A deployment save still succeeds if GitHub creation fails.
+
+When repository creation succeeds and `GitHub:RepoMerge:Enabled` is `true`, the app redirects to the **Merge progress** page instead of Index. The page polls `GET /AppDeployment/MergeStatus?jobId=...` every 1.5 seconds.
+
+---
+
+## Repository merge (source → client)
+
+After a client repository is created, the app runs `Scripts/Merge-LatestClientChanges.ps1` with the sanitized repository name as `-ClientRepoName` (replacing the hard-coded `$clientName` in the legacy script).
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `GitHub:RepoMerge:Enabled` | `true` | Skip merge and go to Index when `false` |
+| `GitHub:RepoMerge:MaxRetries` | `3` | Total execution attempts (initial + retries) |
+| `GitHub:RepoMerge:RetryDelaySeconds` | `5` | Wait between failed attempts |
+| `GitHub:RepoMerge:SourceOwner` | `systenics` | Source repo owner |
+| `GitHub:RepoMerge:SourceRepository` | `SA_AWDemoMobile` | Source repo name |
+| `GitHub:RepoMerge:SourceBranch` | `master_client` | Branch to merge from |
+| `GitHub:RepoMerge:ClientBranch` | `master_dev` | Branch created/updated on client repo |
+| `GitHub:RepoMerge:WorkingDirectoryRoot` | `C:\Application` | Local clone directory |
+
+### Test merge script standalone
+
+```powershell
+cd c:\Applications\systenics\MobileAppDeployment\MobileAppDeployment\Scripts
+
+$env:GITHUB_TOKEN = "ghp_your_token_here"
+
+.\Merge-LatestClientChanges.ps1 -ClientRepoName "EliteBids"
+```
+
+The script emits `MERGE_PROGRESS:{json}` lines during execution and a final `MERGE_RESULT:{json}` line.
+
+### Disable merge locally
+
+```json
+"GitHub": {
+  "RepoMerge": {
+    "Enabled": false
+  }
+}
+```
 
 ### Disable integration locally
 

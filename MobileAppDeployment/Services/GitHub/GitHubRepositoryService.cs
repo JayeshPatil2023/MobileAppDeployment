@@ -20,10 +20,7 @@ public class GitHubRepositoryService : IGitHubRepositoryService
     private readonly IWebHostEnvironment _environment;
     private readonly ILogger<GitHubRepositoryService> _logger;
 
-    public GitHubRepositoryService(
-        IOptions<GitHubOptions> options,
-        IWebHostEnvironment environment,
-        ILogger<GitHubRepositoryService> logger)
+    public GitHubRepositoryService(IOptions<GitHubOptions> options, IWebHostEnvironment environment, ILogger<GitHubRepositoryService> logger)
     {
         _options = options.Value;
         _environment = environment;
@@ -31,9 +28,7 @@ public class GitHubRepositoryService : IGitHubRepositoryService
     }
 
     /// <inheritdoc />
-    public async Task<GitHubRepositoryResult> CreateClientRepositoryAsync(
-        AppDeployment deployment,
-        CancellationToken cancellationToken = default)
+    public async Task<GitHubRepositoryResult> CreateClientRepositoryAsync(AppDeployment deployment, CancellationToken cancellationToken = default)
     {
         if (!_options.Enabled)
         {
@@ -141,13 +136,9 @@ public class GitHubRepositoryService : IGitHubRepositoryService
     /// Creates process start info for Windows PowerShell or PowerShell 7.
     /// Uses <see cref="ProcessStartInfo.ArgumentList"/> so values with spaces are passed correctly.
     /// </summary>
-    private static ProcessStartInfo CreatePowerShellStartInfo(
-        string scriptPath,
-        string appName,
-        string description,
-        string token)
+    private static ProcessStartInfo CreatePowerShellStartInfo(string scriptPath, string appName, string description, string token)
     {
-        ProcessStartInfo startInfo = new()
+        ProcessStartInfo startInfo = new ProcessStartInfo()
         {
             FileName = ResolvePowerShellExecutable(),
             RedirectStandardOutput = true,
@@ -190,9 +181,7 @@ public class GitHubRepositoryService : IGitHubRepositoryService
     /// </summary>
     private GitHubRepositoryResult ParseScriptOutput(string stdout, int exitCode)
     {
-        string? jsonLine = stdout
-            .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
-            .LastOrDefault(line => line.TrimStart().StartsWith('{'));
+        string? jsonLine = stdout.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries).LastOrDefault(line => line.TrimStart().StartsWith('{'));
 
         if (string.IsNullOrWhiteSpace(jsonLine))
         {

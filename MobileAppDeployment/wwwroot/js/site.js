@@ -187,11 +187,95 @@
     });
   }
 
+  function initMergeProgress() {
+    const root = document.getElementById('merge-progress-root');
+    if (!root) return;
+
+    const statusUrl = root.dataset.statusUrl;
+    const bar = document.getElementById('merge-progress-bar');
+    const fill = document.getElementById('merge-progress-fill');
+    const messageEl = document.getElementById('merge-progress-message');
+    const attemptEl = document.getElementById('merge-progress-attempt');
+    const successBanner = document.getElementById('merge-success-banner');
+    const successText = document.getElementById('merge-success-text');
+    const errorBanner = document.getElementById('merge-error-banner');
+    const errorText = document.getElementById('merge-error-text');
+    const actions = document.getElementById('merge-progress-actions');
+
+    if (!statusUrl || !bar || !fill || !messageEl) return;
+
+    let pollTimer = null;
+
+    function updateUi(data) {
+      const percent = Math.max(0, Math.min(100, data.percentComplete ?? 0));
+      fill.style.width = `${percent}%`;
+      bar.setAttribute('aria-valuenow', String(percent));
+      messageEl.textContent = data.currentMessage || 'Merging...';
+
+      if (data.attempt > 0 && data.maxRetries > 0) {
+        attemptEl.hidden = false;
+        attemptEl.textContent = `Attempt ${data.attempt} of ${data.maxRetries}`;
+      }
+
+      if (data.status === 'Retrying') {
+        bar.classList.add('merge-progress-bar--retrying');
+      } else {
+        bar.classList.remove('merge-progress-bar--retrying');
+      }
+    }
+
+    function showTerminalState(data) {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+
+      actions.hidden = false;
+
+      if (data.status === 'Completed') {
+        successBanner.hidden = false;
+        successText.textContent = data.currentMessage || 'Source code merged into the client repository successfully.';
+        fill.style.width = '100%';
+        bar.setAttribute('aria-valuenow', '100');
+        return;
+      }
+
+      if (data.status === 'Failed') {
+        errorBanner.hidden = false;
+        errorText.textContent = data.errorMessage || 'Repository merge failed after all retry attempts.';
+      }
+    }
+
+    async function pollStatus() {
+      try {
+        const response = await fetch(statusUrl, {
+          headers: { Accept: 'application/json' },
+          cache: 'no-store'
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        updateUi(data);
+
+        if (data.isTerminal) {
+          showTerminalState(data);
+        }
+      } catch {
+        // Keep polling — transient network errors should not stop the UI.
+      }
+    }
+
+    pollStatus();
+    pollTimer = setInterval(pollStatus, 1500);
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     initSidebarScrollSpy();
     initUploadZones();
     initFormProgress();
     initAlertDismiss();
     initFieldHelp();
+    initMergeProgress();
   });
 })();

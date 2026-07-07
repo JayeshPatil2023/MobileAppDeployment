@@ -15,7 +15,10 @@ builder.Services.AddScoped<IAppDeploymentRepository, AppDeploymentRepository>();
 builder.Services.AddScoped<IAppDeploymentService,AppDeploymentService>();
 builder.Services.AddScoped<IAssetStorageService, AssetStorageService>();
 builder.Services.Configure<GitHubOptions>(builder.Configuration.GetSection(GitHubOptions.SectionName));
+builder.Services.Configure<RepoMergeOptions>(builder.Configuration.GetSection($"{GitHubOptions.SectionName}:RepoMerge"));
 builder.Services.AddScoped<IGitHubRepositoryService, GitHubRepositoryService>();
+builder.Services.AddSingleton<IRepoMergeJobStore, RepoMergeJobStore>();
+builder.Services.AddSingleton<IRepoMergeService, RepoMergeService>();
 
 var app = builder.Build();
 

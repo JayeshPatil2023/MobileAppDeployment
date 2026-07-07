@@ -290,6 +290,69 @@ a:hover { text-decoration: underline; }
 }
 .alert-close:hover { opacity: 1; }
 
+/* ── Repository merge progress ─────────────────────────────── */
+.merge-progress-card {
+  padding: 1.75rem;
+}
+
+.merge-progress-card__header {
+  margin-bottom: 1.5rem;
+}
+
+.merge-progress-card__title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 .35rem;
+}
+
+.merge-progress-card__repo-link {
+  font-size: 14px;
+  font-family: var(--font-mono);
+  word-break: break-all;
+}
+
+.merge-progress-bar {
+  height: 12px;
+  background: var(--bg-sub);
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.merge-progress-bar__fill {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--accent), #5B8DF6);
+  border-radius: 999px;
+  transition: width .35s ease;
+}
+
+.merge-progress-bar[aria-valuenow="100"] .merge-progress-bar__fill {
+  background: linear-gradient(90deg, var(--success), #22C55E);
+}
+
+.merge-progress-status {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin: 0 0 .35rem;
+}
+
+.merge-progress-meta {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0 0 1rem;
+}
+
+.merge-result-banner {
+  margin-top: 1rem;
+  margin-bottom: 0;
+}
+
+.merge-progress-actions {
+  margin-top: 1.5rem;
+}
+
 /* ── Section card ─────────────────────────────────────────────── */
 .section {
   background: var(--bg-card);
