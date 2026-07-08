@@ -1,0 +1,26 @@
+# Template copied into each client repo as .github/workflows/Base-client-deployment.yml
+# Keep workflow_dispatch so the base workflow can trigger this file via API.
+
+name: Client Mobile Deployment
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy mobile application
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout client repository
+        uses: actions/checkout@v4
+
+      - name: Placeholder deployment step
+        shell: pwsh
+        run: |
+          Write-Host "Replace this step with your client mobile deployment pipeline."
+          Write-Host "Repository: ${{ github.repository }}"
+          Write-Host "Ref: ${{ github.ref_name }}"

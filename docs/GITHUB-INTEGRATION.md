@@ -286,9 +286,42 @@ on:
         type: string
 ```
 
-After `create_client_repo.ps1`, run `Update-GitHubAssets.ps1`, then `Update-BuildEnvironment.ps1`:
+After `create_client_repo.ps1`, run the steps in this order:
+
+| Step | Script | Purpose |
+|------|--------|---------|
+| 1 | `create_client_repo.ps1` | Create/merge client repo |
+| 2 | `Copy-ClientDeploymentWorkflow.ps1` | Copy `Base-client-deployment.yml` into client repo |
+| 3 | `Update-GitHubAssets.ps1` | Update logo/splash in client repo |
+| 4 | `Update-BuildEnvironment.ps1` | Update `sys.config/build.environment.json` |
+| 5 | `Invoke-ClientDeploymentWorkflow.ps1` | Trigger client repo deployment workflow |
 
 ```yaml
+      - name: Execute Merge Script
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          ./create_client_repo.ps1 `
+            -ClientName "${{ inputs.client_name }}" `
+            -ClientBranch "${{ inputs.client_branch }}" `
+            -SourceName "${{ inputs.source_name }}" `
+            -SourceBranch "${{ inputs.source_branch }}" `
+            -WorkingDir "${{ runner.temp }}\MergeWorkspace" `
+            -MergeTagName "merge-${{ github.run_number }}"
+
+      - name: Copy Client Deployment Workflow
+        if: success()
+        shell: pwsh
+        run: |
+          ./Copy-ClientDeploymentWorkflow.ps1 `
+            -GitHubToken "${{ secrets.GH_PAT }}" `
+            -Owner "systenics" `
+            -Repo "${{ inputs.client_name }}" `
+            -Branch "${{ inputs.client_branch }}" `
+            -SourceFilePath "./Base-client-deployment.yml" `
+            -WorkingDir "${{ runner.temp }}\MergeWorkspace"
+
       - name: Update GitHub Assets
         if: success()
         shell: pwsh
@@ -313,15 +346,45 @@ After `create_client_repo.ps1`, run `Update-GitHubAssets.ps1`, then `Update-Buil
             -AppBundleId "${{ inputs.app_bundle_id }}" `
             -AppId "${{ inputs.app_id }}" `
             -ProjectId "${{ inputs.project_id }}"
+
+      - name: Trigger Client Deployment Workflow
+        if: success()
+        shell: pwsh
+        run: |
+          ./Invoke-ClientDeploymentWorkflow.ps1 `
+            -GitHubToken "${{ secrets.GH_PAT }}" `
+            -Owner "systenics" `
+            -Repo "${{ inputs.client_name }}" `
+            -Branch "${{ inputs.client_branch }}" `
+            -WorkflowFileName "Base-client-deployment.yml" `
+            -WaitSeconds 15
 ```
+
+### Client deployment workflow template
+
+Keep `Base-client-deployment.yml` in `SA_BaseMVCProject` (repo root). The copy script publishes it to:
+
+`.github/workflows/Base-client-deployment.yml`
+
+in the **client repo**. The client workflow must include `workflow_dispatch` so the base workflow can trigger it via API.
+
+A starter template lives at `Scripts/Base-client-deployment.yml` in this project — replace the placeholder deployment step with your real mobile build/deploy pipeline.
+
+`GH_PAT` must have **Actions: Read and write** on both the base repo and client repos.
+
+Copy these scripts into `SA_BaseMVCProject`:
+
+- `Copy-ClientDeploymentWorkflow.ps1`
+- `Invoke-ClientDeploymentWorkflow.ps1`
+- `Update-GitHubAssets.ps1`
+- `Update-BuildEnvironment.ps1`
+- `Base-client-deployment.yml` (if not already there)
 
 `Update-BuildEnvironment.ps1` updates `sys.config/build.environment.json` in the **client repo** (both `release` and `debug` sections):
 
 - `appBundleId`
 - `OneSignal.AppId`
 - `OneSignal.ProjectId`
-
-Copy `Scripts/Update-BuildEnvironment.ps1` into your workflow repository (`SA_BaseMVCProject`) alongside the other scripts.
 
 ### Disable merge locally
 
@@ -370,5 +433,8 @@ Invalid names throw a validation error before the API call.
 | `400 Bad Request - Invalid Hostname` via ngrok | Run ngrok with `--host-header=rewrite` for IIS Express |
 | GitHub workflow cannot download logo/splash | Set `PublicBaseUrl` to a public URL (ngrok or deployed server), not localhost |
 | `Update-GitHubAssets` 404 with `assets/=branch` in URL | PowerShell parsed `$RepoPath?ref` incorrectly; use updated script with `${RepoPath}?ref=${Branch}` |
+| Client deployment workflow not triggered | Ensure `Base-client-deployment.yml` has `workflow_dispatch` and `GH_PAT` has Actions write on client repo |
+| `404` on Copy Client Deployment Workflow | Use git-based `Copy-ClientDeploymentWorkflow.ps1` and pass `-WorkingDir "${{ runner.temp }}\MergeWorkspace"` |
+| `404` on workflow dispatch | Workflow file not yet visible; increase `WaitSeconds` in `Invoke-ClientDeploymentWorkflow.ps1` |
 
 Check application logs for entries from `GitHubRepositoryService` and `AppDeploymentController`.
