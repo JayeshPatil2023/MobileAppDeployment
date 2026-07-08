@@ -1,477 +1,192 @@
-# GitHub Repository Automation
+# GitHub Integration — App Deployment & Base Workflow
 
-After a **Create** form submission succeeds, the app automatically creates a public GitHub repository named after the **Client App Name** (`AppName`).
+## Overview
 
-- **GitHub account:** [JayeshPatil2023](https://github.com/JayeshPatil2023)
-- **API endpoint:** `https://api.github.com/user/repos`
-- **Script:** `Scripts/New-GitHubClientRepository.ps1`
+After a successful **New App Deployment** (Create) form submit:
+
+1. Form inputs are validated
+2. Deployment data is saved to PostgreSQL
+3. Mobile App Icon / Launch Image are also published under `wwwroot/uploads/workflow-assets/` for GitHub Actions to download
+4. The app dispatches the **base workflow** in `systenics/SA_BaseMVCProject` via GitHub `workflow_dispatch`
+5. The UI shows **live progress** (with retries) while the dispatch API call is in flight
+
+Repo creation, local PowerShell merge, and the in-app merge progress path have been **removed** from the production Create flow.  
+Those operations now run inside GitHub Actions (see scripts under `MobileAppDeployment/Scripts/` and the workflow YAML in `SA_BaseMVCProject`).
+
+---
+
+## End-to-end sequence
+
+```
+User submits Create form
+        │
+        ▼
+Validate ModelState + required files
+        │
+        ▼
+Save AppDeployment to DB + store form assets under /uploads/{id}/
+        │
+        ▼
+IWorkflowOrchestrationService.StartWorkflowJobAsync
+  • save logo/splash public URLs (wwwroot/uploads/workflow-assets/{client}/)
+  • queue job in IWorkflowJobStore
+  • background: workflow_dispatch with retries
+        │
+        ▼
+Redirect → WorkflowProgress?jobId=...
+        │
+        ▼
+Browser polls GET /AppDeployment/WorkflowStatus?jobId=... every 1.5s
+        │
+        ▼
+Success / Failure banner in UI
+```
+
+Meanwhile, `SA_BaseMVCProject` runs `create_client_repo.ps1`, asset update, build.environment update, and client deployment workflow trigger.
+
+---
+
+## Field mapping (Create → workflow inputs)
+
+| Create form field | Workflow input |
+|-------------------|----------------|
+| App Name (`AppName`) | `client_name` |
+| Mobile App Icon | `logo_blob_url` (via public URL) |
+| Launch Image | `splash_blob_url` (via public URL) |
+| Bundle ID iOS (`IosBundleId`) | `app_bundle_id` |
+| OneSignal App ID (`OneSignalAppId`) | `app_id` |
+| OneSignal Sender ID (`OneSignalSenderId`) | `project_id` |
+
+Other workflow inputs (`client_branch`, `source_name`, `source_branch`) come from `GitHub:WorkflowDispatch` config.
+
+---
+
+## Architecture (app services)
+
+| Component | Role |
+|-----------|------|
+| `IWorkflowOrchestrationService` / `WorkflowOrchestrationService` | Shared entry: validate, store assets, start job, retry dispatch |
+| `IGitHubWorkflowDispatchService` / `GitHubWorkflowDispatchService` | HTTP `POST .../actions/workflows/{file}/dispatches` |
+| `IWorkflowAssetStorageService` | Save PNGs under `wwwroot/uploads/workflow-assets/` and build absolute URLs |
+| `IWorkflowJobStore` / `WorkflowJobStore` | In-memory job state for progress UI |
+| `WorkflowProgress` + `WorkflowStatus` | Live UI + JSON poll endpoint |
+
+### Retry behavior
+
+Configured under `GitHub:WorkflowDispatch`:
+
+| Setting | Default | Meaning |
+|---------|---------|---------|
+| `MaxRetries` | `3` | Total dispatch attempts |
+| `RetryDelaySeconds` | `5` | Wait between failed attempts |
+
+Only the **GitHub API dispatch** is retried. Asset upload runs once on the request thread (while `IFormFile` streams are valid).
+
+---
+
+## Configuration
+
+```json
+"GitHub": {
+  "PersonalAccessToken": "",
+  "WorkflowDispatch": {
+    "Enabled": true,
+    "Owner": "systenics",
+    "Repository": "SA_BaseMVCProject",
+    "Workflow": "main.yml",
+    "Ref": "master",
+    "ClientBranch": "master_dev",
+    "SourceName": "SA_AWDemoMobile",
+    "SourceBranch": "master_client",
+    "PublicBaseUrl": "https://your-public-host-or-ngrok",
+    "MaxRetries": 3,
+    "RetryDelaySeconds": 5
+  }
+}
+```
+
+Configure the PAT via User Secrets or `GITHUB_TOKEN` (never commit real tokens):
+
+```powershell
+dotnet user-secrets set "GitHub:PersonalAccessToken" "ghp_your_token_here"
+```
+
+Token needs scopes to dispatch Actions on `SA_BaseMVCProject` (and whatever the base workflow needs for client repos).
+
+### PublicBaseUrl / ngrok
+
+GitHub-hosted runners cannot reach `localhost`. Set `PublicBaseUrl` in `appsettings.json` (or User Secrets) to a public URL (production host or ngrok). See the **Local development with ngrok** section below.
+
+Do **not** set `"PublicBaseUrl": ""` in `appsettings.Development.json` — that empty value overrides the base config and the app used to fall back to `https://localhost:...`, which Actions cannot download.
 
 ---
 
 ## Prerequisites
 
-1. **PowerShell 5.1+** (Windows) or **PowerShell 7+** (`pwsh`) — the app prefers `pwsh.exe` when installed.
-2. **GitHub Personal Access Token** with the `repo` scope.
-3. **TLS / network** access from the app server to `api.github.com`.
-
-### Execution policy
-
-The app invokes PowerShell with `-ExecutionPolicy Bypass` for the script process only. You do **not** need to change the machine-wide execution policy.
-
-To test the script manually:
-
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-```
+1. Valid GitHub PAT available to the web app process
+2. Publicly reachable `PublicBaseUrl` when testing workflow asset downloads
+3. Base workflow file in `SA_BaseMVCProject` with matching `workflow_dispatch` inputs
 
 ---
 
-## Configure the token
+## create_client_repo.ps1 (base workflow script)
 
-Replace `YOUR_GITHUB_TOKEN` using **one** of these options (recommended order):
+Used **inside** GitHub Actions (not by the ASP.NET Create action anymore).
 
-### Option 1 — Environment variable (recommended for production)
-
-```powershell
-$env:GITHUB_TOKEN = "ghp_your_token_here"
-```
-
-### Option 2 — User Secrets (recommended for local development)
-
-```powershell
-cd c:\Applications\systenics\MobileAppDeployment\MobileAppDeployment
-dotnet user-secrets set "GitHub:PersonalAccessToken" "ghp_your_token_here"
-```
-
-### Option 3 — appsettings.Development.json
-
-```json
-{
-  "GitHub": {
-    "PersonalAccessToken": "ghp_your_token_here"
-  }
-}
-```
-
-Never commit real tokens to source control.
-
----
-
-## Test the script standalone
-
-```powershell
-cd c:\Applications\systenics\MobileAppDeployment\MobileAppDeployment\Scripts
-
-$env:GITHUB_TOKEN = "ghp_your_token_here"
-
-.\New-GitHubClientRepository.ps1 -AppName "EliteBids" -Description "EliteBids mobile deployment"
-```
-
-Expected success output (last line):
-
-```json
-{"success":true,"repository":"EliteBids","html_url":"https://github.com/JayeshPatil2023/EliteBids",...}
-```
-
----
-
-## Application integration
-
-| Step | Location | What happens |
-|------|----------|----------------|
-| 1 | `AppDeploymentController.Create` (POST) | Form validated, deployment saved, files uploaded |
-| 2 | `IGitHubRepositoryService.CreateClientRepositoryAsync` | Called immediately after successful save |
-| 3 | `GitHubRepositoryService` | Runs `Scripts/New-GitHubClientRepository.ps1` with `GITHUB_TOKEN` |
-| 4 | Redirect to Index | Success/warning message shown via `TempData` |
-| 5 | `IRepoMergeService.StartMergeJob` | When repo merge is enabled, merges source into client repo |
-| 6 | `MergeProgress` view | Live progress bar polled via `MergeStatus` API |
-
-**Important:** GitHub creation runs only on **Create**, not **Edit**. A deployment save still succeeds if GitHub creation fails.
-
-When repository creation succeeds and `GitHub:RepoMerge:Enabled` is `true`, the app redirects to the **Merge progress** page instead of Index. The page polls `GET /AppDeployment/MergeStatus?jobId=...` every 1.5 seconds.
-
----
-
-## Repository merge (source → client)
-
-After a client repository is created, the app runs `Scripts/Merge-LatestClientChanges.ps1` with the sanitized repository name as `-ClientRepoName` (replacing the hard-coded `$clientName` in the legacy script).
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `GitHub:RepoMerge:Enabled` | `true` | Skip merge and go to Index when `false` |
-| `GitHub:RepoMerge:MaxRetries` | `3` | Total execution attempts (initial + retries) |
-| `GitHub:RepoMerge:RetryDelaySeconds` | `5` | Wait between failed attempts |
-| `GitHub:RepoMerge:SourceOwner` | `systenics` | Source repo owner |
-| `GitHub:RepoMerge:SourceRepository` | `SA_AWDemoMobile` | Source repo name |
-| `GitHub:RepoMerge:SourceBranch` | `master_client` | Branch to merge from |
-| `GitHub:RepoMerge:ClientBranch` | `master_dev` | Branch created/updated on client repo |
-| `GitHub:RepoMerge:WorkingDirectoryRoot` | `C:\Application` | Local clone directory |
+Empty-repo bootstrap notes (default branch / unrelated histories) remain in the section below historically titled under “Repository merge” updates — still apply when the Actions job runs `create_client_repo.ps1`.
 
 ### `create_client_repo.ps1` update notes (empty-repo bootstrap + workflow discovery)
 
-The base workflow now relies on a client-side workflow file (`Base-client-deployment.yml`) that is triggered later via:
+The base workflow relies on a client-side workflow file (`Base-client-deployment.yml`) triggered via:
 
 ```powershell
 gh workflow run Base-client-deployment.yml --repo systenics/<client> --ref <client_branch>
 ```
 
-GitHub only discovers workflows that exist on the repository **default branch**.  
-For brand-new client repos created by `create_client_repo.ps1`, there is initially:
+GitHub only discovers workflows on the repository **default branch**. Brand-new client repos initially have no commits / default branch. The script bootstraps `.github/workflows/Base-client-deployment.yml`, sets the default branch, then merges source with `--allow-unrelated-histories` when needed, and uses `$LASTEXITCODE` for local-branch checks.
 
-- no commits
-- no default branch
-- no `.github/workflows` directory
+---
 
-Without bootstrap logic, this caused:
+## Local development with ngrok
 
-1. `gh workflow run ...` returning 404 (`workflow ... not found on the default branch`)
-2. merge flow failures on empty repos due to unrelated root histories
-3. downstream `Update-BuildEnvironment.ps1` 404 because source code was not merged yet
-
-To fix this, `create_client_repo.ps1` was updated to:
-
-1. Resolve default branch via `gh repo view --json defaultBranchRef`
-2. If default branch is missing (empty repo), bootstrap with `ClientBranch`
-3. Copy `Base-client-deployment.yml` into `.github/workflows/Base-client-deployment.yml`
-4. Commit/push that file and set repo default branch (`gh repo edit --default-branch ...`)
-5. Continue merge flow, using `--allow-unrelated-histories` only for this bootstrap case
-6. Use a correct local-branch existence check (`$LASTEXITCODE`) before creating tracking branches
-
-Why `--allow-unrelated-histories` is needed here:  
-the workflow bootstrap commit creates the first root commit in the client repo, while the source repo has its own unrelated root history. The first merge between these two histories must explicitly allow unrelated histories.
-
-After this change:
-
-- workflow discovery works reliably for new client repos
-- source merge proceeds in first-run scenarios
-- `sys.config/build.environment.json` is available for `Update-BuildEnvironment.ps1`
-
-### Test merge script standalone
-
-```powershell
-cd c:\Applications\systenics\MobileAppDeployment\MobileAppDeployment\Scripts
-
-$env:GITHUB_TOKEN = "ghp_your_token_here"
-
-.\Merge-LatestClientChanges.ps1 -ClientRepoName "EliteBids"
-```
-
-The script emits `MERGE_PROGRESS:{json}` lines during execution and a final `MERGE_RESULT:{json}` line.
-
-### Non-interactive git (no credential popup)
-
-Repository **creation** uses the GitHub REST API with your PAT directly. Repository **merge** runs local `git` commands (clone, fetch, push). Those commands do **not** use the REST API token automatically.
-
-On Windows, Git Credential Manager (GCM) intercepts HTTPS git requests. If the stored `origin` remote URL has no embedded credentials, GCM opens the **"Select an account"** dialog — even when a PAT is configured in the app for API calls.
-
-The merge script prevents this by:
-
-1. Passing `GITHUB_TOKEN` from the app into the PowerShell process
-2. Setting `GIT_TERMINAL_PROMPT=0`, `GCM_INTERACTIVE=never`, and `GCM_PROMPT=never`
-3. Reconfiguring `origin` to `https://x-access-token:<PAT>@github.com/...` after clone
-4. Applying the same authenticated URL to the **source** remote (`systenics/SA_AWDemoMobile`) — required when the source repo is private
-5. Disabling the local credential helper so git uses the URL token only
-
-Your PAT must have **`repo` read access** to both the client repos under `JayeshPatil2023` and the source repo under `systenics`.
-
-Ensure the token is available to the **web app process** (not only your interactive PowerShell session):
-
-```powershell
-dotnet user-secrets set "GitHub:PersonalAccessToken" "ghp_your_token_here"
-```
-
-Or set `GITHUB_TOKEN` in the environment used to launch IIS Express / Kestrel.
-
-### Workflow dispatch with logo/splash uploads
-
-The Index page **Trigger Build Workflow** form accepts:
-
-- Client name
-- Logo PNG
-- Splash PNG
-- App bundle ID (`appBundleId` in `build.environment.json`)
-- OneSignal App ID (`OneSignal.AppId`)
-- OneSignal Project ID (`OneSignal.ProjectId`)
-
-The app stores files under `wwwroot/uploads/workflow-assets/{clientName}/` and sends absolute URLs to GitHub as `logo_blob_url` and `splash_blob_url`.
-
-Set a publicly reachable base URL (required for GitHub Actions runners to download images):
-
-```json
-"GitHub": {
-  "WorkflowDispatch": {
-    "PublicBaseUrl": "https://your-deployed-app.example.com"
-  }
-}
-```
-
-If `PublicBaseUrl` is empty, the app uses the current request host (works only when GitHub can reach that URL — not `localhost`).
-
-### Local development with ngrok
-
-GitHub-hosted runners run in the cloud. They **cannot** reach:
+GitHub-hosted runners cannot reach:
 
 - `localhost` / `127.0.0.1`
-- Private LAN IPs (`192.168.x.x`, `10.x.x.x`)
+- Private LAN IPs
 
-To test workflow asset uploads from your local machine, expose the app with **ngrok** and set `PublicBaseUrl` to the ngrok URL.
-
-#### 1. Run the app locally
-
-**Option A — Kestrel (recommended for ngrok)**
+### Run app + tunnel
 
 ```powershell
-cd c:\Applications\systenics\MobileAppDeployment\MobileAppDeployment
 dotnet run --launch-profile http
-```
-
-App listens at `http://localhost:5190`.
-
-**Option B — IIS Express**
-
-Uses `https://localhost:44391` (see `Properties/launchSettings.json`).
-
-#### 2. Start ngrok
-
-For Kestrel (HTTP):
-
-```powershell
 ngrok http http://localhost:5190
 ```
 
-For IIS Express (HTTPS), add host-header rewrite (required — without it you get **400 Bad Request - Invalid Hostname**):
+For IIS Express HTTPS:
 
 ```powershell
 ngrok http https://localhost:44391 --host-header=rewrite
 ```
 
-Or explicitly:
-
-```powershell
-ngrok http https://localhost:44391 --host-header=localhost:44391
-```
-
-Copy the forwarding URL, e.g. `https://abc123.ngrok-free.dev`.
-
-#### 3. Configure PublicBaseUrl
-
-In `appsettings.json` or User Secrets:
+Set:
 
 ```json
-"GitHub": {
-  "WorkflowDispatch": {
-    "PublicBaseUrl": "https://abc123.ngrok-free.dev"
-  }
-}
+"PublicBaseUrl": "https://abc123.ngrok-free.dev"
 ```
 
-Restart the app after changing this value.
-
-#### 4. Verify before triggering the workflow
-
-Open in a browser (ideally from mobile data, not your office Wi‑Fi):
-
-```
-https://abc123.ngrok-free.dev
-```
-
-After uploading assets via **Trigger Build Workflow**, test a direct file URL:
-
-```
-https://abc123.ngrok-free.dev/uploads/workflow-assets/BidMaster/logo.png
-```
-
-If the image loads, GitHub Actions can likely download it too.
-
-#### 5. ngrok free tier and GitHub Actions
-
-ngrok free tier may show a browser warning page to automated clients. `Update-GitHubAssets.ps1` sends the `ngrok-skip-browser-warning` header when downloading images. Keep the script in your workflow repo up to date.
-
-#### ngrok troubleshooting
-
-| Symptom | Fix |
-|---------|-----|
-| `400 Bad Request - Invalid Hostname` | Use `--host-header=rewrite` with IIS Express, or switch to `dotnet run --launch-profile http` |
-| Workflow runs but asset download fails | Confirm `PublicBaseUrl` matches current ngrok URL (URL changes each free session unless you use a reserved domain) |
-| `localhost` URLs sent to GitHub | Set `PublicBaseUrl`; do not rely on request host when testing locally |
-
-For production, deploy the app to a stable public URL and set `PublicBaseUrl` to that domain instead of ngrok.
-
-Add these inputs to your workflow YAML:
-
-```yaml
-on:
-  workflow_dispatch:
-    inputs:
-      logo_blob_url:
-        description: "Public URL for logo PNG"
-        required: true
-        type: string
-      splash_blob_url:
-        description: "Public URL for splash PNG"
-        required: true
-        type: string
-      app_bundle_id:
-        description: "Android/iOS app bundle ID"
-        required: true
-        type: string
-      app_id:
-        description: "OneSignal App ID"
-        required: true
-        type: string
-      project_id:
-        description: "OneSignal Project ID"
-        required: true
-        type: string
-```
-
-After `create_client_repo.ps1`, run the steps in this order:
-
-| Step | What runs | Purpose |
-|------|-----------|---------|
-| 1 | `create_client_repo.ps1` | Create/merge client repo |
-| 2 | `Update-GitHubAssets.ps1` | Update logo/splash in client repo |
-| 3 | `Update-BuildEnvironment.ps1` | Update `sys.config/build.environment.json` |
-| 4 | `gh workflow run` (inline) | Trigger `Base-client-deployment.yml` in the **client** repo |
-
-`Base-client-deployment.yml` is assumed to already exist in each client repo under `.github/workflows/`. Do **not** copy it from the base workflow.
-
-```yaml
-      - name: Execute Merge Script
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
-        run: |
-          ./create_client_repo.ps1 `
-            -ClientName "${{ inputs.client_name }}" `
-            -ClientBranch "${{ inputs.client_branch }}" `
-            -SourceName "${{ inputs.source_name }}" `
-            -SourceBranch "${{ inputs.source_branch }}" `
-            -WorkingDir "${{ runner.temp }}\MergeWorkspace" `
-            -MergeTagName "merge-${{ github.run_number }}"
-
-      - name: Update GitHub Assets
-        if: success()
-        shell: pwsh
-        run: |
-          ./Update-GitHubAssets.ps1 `
-            -GitHubToken "${{ secrets.GH_PAT }}" `
-            -Owner "systenics" `
-            -Repo "${{ inputs.client_name }}" `
-            -Branch "${{ inputs.client_branch }}" `
-            -LogoBlobUrl "${{ inputs.logo_blob_url }}" `
-            -SplashBlobUrl "${{ inputs.splash_blob_url }}"
-
-      - name: Update Build Environment
-        if: success()
-        shell: pwsh
-        run: |
-          ./Update-BuildEnvironment.ps1 `
-            -GitHubToken "${{ secrets.GH_PAT }}" `
-            -Owner "systenics" `
-            -Repo "${{ inputs.client_name }}" `
-            -Branch "${{ inputs.client_branch }}" `
-            -AppBundleId "${{ inputs.app_bundle_id }}" `
-            -AppId "${{ inputs.app_id }}" `
-            -ProjectId "${{ inputs.project_id }}"
-
-      - name: Trigger Client Deployment Workflow
-        if: success()
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
-        run: |
-          $repo = "systenics/${{ inputs.client_name }}"
-          $workflowFile = "Base-client-deployment.yml"
-          $ref = "${{ inputs.client_branch }}"
-
-          Write-Host "Listing workflows for $repo..."
-          gh workflow list --repo $repo
-
-          # GitHub only registers workflows that exist on the DEFAULT branch.
-          # If Base-client-deployment.yml lives only on master_dev, this step 404s.
-          Write-Host "Triggering $workflowFile on $repo ($ref)..."
-          gh workflow run $workflowFile `
-            --repo $repo `
-            --ref $ref
-```
-
-If the client workflow accepts inputs (same as your other project’s `-f` pattern):
-
-```yaml
-          gh workflow run $workflowFile `
-            --repo $repo `
-            --ref $ref `
-            -f some_input=value
-```
-
-### Client deployment workflow requirements
-
-In the **client repo**, ensure `.github/workflows/Base-client-deployment.yml` includes:
-
-```yaml
-on:
-  workflow_dispatch:
-```
-
-**Important — default branch required**
-
-GitHub Actions discovers workflows from the repository **default branch** only.  
-If `Base-client-deployment.yml` exists only on `master_dev` (as in your screenshot) and the default branch is `master`/`main`/`master_client`, `gh workflow run` fails with:
-
-`HTTP 404: workflow Base-client-deployment.yml not found on the default branch`
-
-Do **one** of the following:
-
-1. **(Recommended)** Merge / copy `.github/workflows/Base-client-deployment.yml` onto the client repo’s **default branch**, then keep triggering with `--ref master_dev`.
-2. Or change the client repo default branch to `master_dev` (Settings → General → Default branch).
-3. As a temporary check, run `gh workflow list --repo systenics/AuctionPro_10` — if the workflow is missing from that list, GitHub has not registered it yet.
-
-`GH_PAT` must have **Actions: Read and write** (and access to the client repos).
-
-Copy these scripts into `SA_BaseMVCProject` (no separate invoke/copy PS scripts needed for deployment trigger):
-
-- `Update-GitHubAssets.ps1`
-- `Update-BuildEnvironment.ps1`
-- `create_client_repo.ps1`
-
-`Update-BuildEnvironment.ps1` updates `sys.config/build.environment.json` in the **client repo** (both `release` and `debug` sections):
-
-- `appBundleId`
-- `OneSignal.AppId`
-- `OneSignal.ProjectId`
-
-### Disable merge locally
-
-```json
-"GitHub": {
-  "RepoMerge": {
-    "Enabled": false
-  }
-}
-```
-
-### Disable integration locally
-
-```json
-"GitHub": {
-  "Enabled": false
-}
-```
+`Update-GitHubAssets.ps1` sends `ngrok-skip-browser-warning` for free-tier downloads.
 
 ---
 
-## Repository naming
+## Base workflow steps (SA_BaseMVCProject)
 
-The script sanitizes `AppName` to meet GitHub rules:
+Typical order after dispatch:
 
-| App name input | Repository name |
-|----------------|-----------------|
-| `EliteBids` | `EliteBids` |
-| `My Client App` | `My-Client-App` |
-| `demo.app` | `demo.app` |
+1. `create_client_repo.ps1` — create/merge client repo + ensure client deployment workflow on default branch  
+2. `Update-GitHubAssets.ps1` — logo/splash  
+3. `Update-BuildEnvironment.ps1` — `sys.config/build.environment.json`  
+4. `gh workflow run Base-client-deployment.yml` — client deployment  
 
-Invalid names throw a validation error before the API call.
+See earlier sections in this file / workflow YAML for exact step snippets.
 
 ---
 
@@ -479,16 +194,10 @@ Invalid names throw a validation error before the API call.
 
 | Symptom | Likely cause |
 |---------|----------------|
-| `GitHub token is not configured` | Set `GITHUB_TOKEN` or `GitHub:PersonalAccessToken` |
-| Git Credential Manager popup during merge | Token not passed to git child process; set User Secrets / env var and restart the app |
-| `GITHUB_TOKEN is not set` from merge script | Same as above — repo creation can work while merge git commands cannot |
-| HTTP 401 / 403 | Token missing `repo` scope or expired |
-| HTTP 422 | Repository name already exists under JayeshPatil2023 |
-| Script not found | Rebuild project so `Scripts/` is copied to output |
-| `400 Bad Request - Invalid Hostname` via ngrok | Run ngrok with `--host-header=rewrite` for IIS Express |
-| GitHub workflow cannot download logo/splash | Set `PublicBaseUrl` to a public URL (ngrok or deployed server), not localhost |
-| `Update-GitHubAssets` 404 with `assets/=branch` in URL | PowerShell parsed `$RepoPath?ref` incorrectly; use updated script with `${RepoPath}?ref=${Branch}` |
-| Client deployment workflow not triggered | Ensure `Base-client-deployment.yml` has `workflow_dispatch` and `GH_PAT` has Actions write on client repo |
-| `gh workflow run` 404 / not found on the default branch | Workflow file exists only on `master_dev`; put it on the repo default branch too (or change default branch) |
+| Workflow dispatch disabled / token missing | Set `GitHub:PersonalAccessToken` or `GITHUB_TOKEN` |
+| Dispatch HTTP 404 | Wrong `Owner`/`Repository`/`Workflow`/`Ref` |
+| Assets not downloaded by Actions | `PublicBaseUrl` not public (localhost) |
+| UI stays queued | App recycled — in-memory `WorkflowJobStore` lost |
+| `gh workflow run` not found on default branch | Put `Base-client-deployment.yml` on client default branch (handled by `create_client_repo.ps1`) |
 
-Check application logs for entries from `GitHubRepositoryService` and `AppDeploymentController`.
+Check logs from `WorkflowOrchestrationService`, `GitHubWorkflowDispatchService`, and `AppDeploymentController`.

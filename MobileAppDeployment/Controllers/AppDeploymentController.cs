@@ -6,6 +6,9 @@ using MobileAppDeployment.Services.GitHub;
 
 namespace MobileAppDeployment.Controllers;
 
+/// <summary>
+/// MVC controller for app deployment CRUD and base workflow triggering.
+/// </summary>
 public class AppDeploymentController : Controller
 {
     private static readonly string[] PngOnly = [".png"];
@@ -15,44 +18,53 @@ public class AppDeploymentController : Controller
 
     private readonly IAppDeploymentService _service;
     private readonly IAssetStorageService _assetStorage;
-    private readonly IGitHubRepositoryService _gitHubRepositoryService;
-    private readonly IGitHubWorkflowDispatchService _gitHubWorkflowDispatchService;
-    private readonly IWorkflowAssetStorageService _workflowAssetStorage;
-    private readonly IRepoMergeService _repoMergeService;
-    private readonly RepoMergeOptions _repoMergeOptions;
+    private readonly IWorkflowOrchestrationService _workflowOrchestration;
     private readonly ILogger<AppDeploymentController> _logger;
 
+    /// <summary>
+    /// Creates a new controller instance.
+    /// </summary>
     public AppDeploymentController(
         IAppDeploymentService service,
         IAssetStorageService assetStorage,
-        IGitHubRepositoryService gitHubRepositoryService,
-        IGitHubWorkflowDispatchService gitHubWorkflowDispatchService,
-        IWorkflowAssetStorageService workflowAssetStorage,
-        IRepoMergeService repoMergeService,
-        Microsoft.Extensions.Options.IOptions<RepoMergeOptions> repoMergeOptions,
+        IWorkflowOrchestrationService workflowOrchestration,
         ILogger<AppDeploymentController> logger)
     {
         _service = service;
         _assetStorage = assetStorage;
-        _gitHubRepositoryService = gitHubRepositoryService;
-        _gitHubWorkflowDispatchService = gitHubWorkflowDispatchService;
-        _workflowAssetStorage = workflowAssetStorage;
-        _repoMergeService = repoMergeService;
-        _repoMergeOptions = repoMergeOptions.Value;
+        _workflowOrchestration = workflowOrchestration;
         _logger = logger;
     }
 
+    /// <summary>
+    /// Lists saved deployments.
+    /// </summary>
     public async Task<IActionResult> Index()
     {
         IEnumerable<AppDeployment> deployments = await _service.GetAllAsync();
         return View(deployments);
     }
 
+    /// <summary>
+    /// Shows the New App Deployment form.
+    /// </summary>
     public IActionResult Create()
     {
         return View(new AppDeployment());
     }
 
+    /// <summary>
+    /// Saves deployment details, then triggers the base GitHub Actions workflow.
+    /// </summary>
+    /// <remarks>
+    /// Field mapping to workflow inputs:
+    /// AppName → client_name,
+    /// Mobile App Icon → logo,
+    /// Launch Image → splash,
+    /// IosBundleId → app_bundle_id,
+    /// OneSignalAppId → app_id,
+    /// OneSignalSenderId → project_id.
+    /// </remarks>
     [HttpPost]
     [ValidateAntiForgeryToken]
     [RequestSizeLimit(52_428_800)]
@@ -63,7 +75,8 @@ public class AppDeploymentController : Controller
         IFormFile? storeIconFile,
         IFormFile? featureGraphicFile,
         IFormFile? firebaseIosConfigFile,
-        IFormFile? firebaseAndroidConfigFile)
+        IFormFile? firebaseAndroidConfigFile,
+        CancellationToken cancellationToken)
     {
         ValidateRequiredFiles(
             ModelState,
@@ -83,80 +96,66 @@ public class AppDeploymentController : Controller
         try
         {
             int id = await _service.CreateAsync(model);
-            await SaveUploadedFilesAsync(id, model, mobileAppIconFile, launchImageFile, storeIconFile, featureGraphicFile, firebaseIosConfigFile, firebaseAndroidConfigFile);
+            await SaveUploadedFilesAsync(
+                id,
+                model,
+                mobileAppIconFile,
+                launchImageFile,
+                storeIconFile,
+                featureGraphicFile,
+                firebaseIosConfigFile,
+                firebaseAndroidConfigFile);
             await _service.UpdateAsync(model);
 
-            GitHubRepositoryResult gitHubResult = await _gitHubRepositoryService.CreateClientRepositoryAsync(model);
-            if (gitHubResult.Success)
-            {
-                string repoCreatedMessage = $"App deployment details saved successfully. GitHub repository created: {gitHubResult.HtmlUrl}";
-
-                if (_repoMergeOptions.Enabled)
+            // DB save first, then dispatch the base GitHub Actions workflow.
+            string jobId = await _workflowOrchestration.StartWorkflowJobAsync(
+                new WorkflowDispatchRequest
                 {
-                    string clientRepoName = gitHubResult.RepositoryName ?? model.AppName;
-                    string jobId = _repoMergeService.StartMergeJob(
-                        clientRepoName,
-                        model.AppName,
-                        gitHubResult.HtmlUrl);
+                    ClientName = model.AppName,
+                    LogoFile = mobileAppIconFile!,
+                    SplashFile = launchImageFile!,
+                    AppBundleId = model.IosBundleId,
+                    AppId = model.OneSignalAppId,
+                    ProjectId = model.OneSignalSenderId,
+                    SavedMessage = "App deployment details saved successfully. Triggering base workflow..."
+                },
+                cancellationToken);
 
-                    TempData["RepoCreatedMessage"] = repoCreatedMessage;
-                    return RedirectToAction(nameof(MergeProgress), new { jobId });
-                }
-
-                TempData["SuccessMessage"] = repoCreatedMessage;
-            }
-            else
-            {
-                TempData["SuccessMessage"] = "App deployment details saved successfully.";
-                if (!string.IsNullOrWhiteSpace(gitHubResult.ErrorMessage))
-                {
-                    TempData["WarningMessage"] = $"GitHub repository was not created: {gitHubResult.ErrorMessage}";
-                    _logger.LogWarning(
-                        "Deployment {DeploymentId} saved but GitHub repo creation failed: {Error}",
-                        id,
-                        gitHubResult.ErrorMessage);
-                }
-            }
+            return RedirectToAction(nameof(WorkflowProgress), new { jobId });
         }
         catch (InvalidOperationException ex)
         {
             ModelState.AddModelError(string.Empty, ex.Message);
             return View(model);
         }
-
-        return RedirectToAction(nameof(Index));
     }
 
     /// <summary>
-    /// Shows live progress while source code is merged into the newly created client repository.
+    /// Shows live progress while the base workflow is being triggered (with retries).
     /// </summary>
-    public IActionResult MergeProgress(string jobId)
+    public IActionResult WorkflowProgress(string jobId)
     {
-        RepoMergeJobState? job = _repoMergeService.GetJob(jobId);
+        WorkflowJobState? job = _workflowOrchestration.GetJob(jobId);
         if (job is null)
         {
             return NotFound();
         }
 
-        MergeProgressViewModel viewModel = new()
+        return View(new WorkflowProgressViewModel
         {
             JobId = job.JobId,
-            AppName = job.AppName,
-            ClientRepoName = job.ClientRepoName,
-            RepositoryUrl = job.RepositoryUrl,
-            RepoCreatedMessage = TempData["RepoCreatedMessage"]?.ToString()
-        };
-
-        return View(viewModel);
+            ClientName = job.ClientName,
+            SavedMessage = job.SavedMessage
+        });
     }
 
     /// <summary>
-    /// JSON endpoint polled by the merge progress UI for live status updates.
+    /// JSON endpoint polled by the workflow progress UI.
     /// </summary>
     [HttpGet]
-    public IActionResult MergeStatus(string jobId)
+    public IActionResult WorkflowStatus(string jobId)
     {
-        RepoMergeJobState? job = _repoMergeService.GetJob(jobId);
+        WorkflowJobState? job = _workflowOrchestration.GetJob(jobId);
         if (job is null)
         {
             return NotFound();
@@ -172,102 +171,13 @@ public class AppDeploymentController : Controller
             maxRetries = job.MaxRetries,
             errorMessage = job.ErrorMessage,
             isTerminal = job.IsTerminal,
-            repositoryUrl = job.RepositoryUrl,
-            clientRepoName = job.ClientRepoName
+            clientName = job.ClientName
         });
     }
 
     /// <summary>
-    /// Uploads logo/splash assets, stores them on the server, and triggers the GitHub Actions workflow.
+    /// Shows a single deployment.
     /// </summary>
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    [RequestSizeLimit(52_428_800)]
-    public async Task<IActionResult> TriggerWorkflow(
-        string? clientName,
-        IFormFile? logoFile,
-        IFormFile? splashFile,
-        string? appBundleId,
-        string? appId,
-        string? projectId,
-        CancellationToken cancellationToken)
-    {
-        if (logoFile is null || logoFile.Length == 0)
-        {
-            TempData["WarningMessage"] = "Logo image is required to trigger the workflow.";
-            return RedirectToAction(nameof(Index));
-        }
-
-        if (splashFile is null || splashFile.Length == 0)
-        {
-            TempData["WarningMessage"] = "Splash image is required to trigger the workflow.";
-            return RedirectToAction(nameof(Index));
-        }
-
-        if (string.IsNullOrWhiteSpace(clientName))
-        {
-            TempData["WarningMessage"] = "Client name is required to trigger the workflow.";
-            return RedirectToAction(nameof(Index));
-        }
-
-        if (string.IsNullOrWhiteSpace(appBundleId))
-        {
-            TempData["WarningMessage"] = "App bundle ID is required to trigger the workflow.";
-            return RedirectToAction(nameof(Index));
-        }
-
-        if (string.IsNullOrWhiteSpace(appId))
-        {
-            TempData["WarningMessage"] = "OneSignal App ID is required to trigger the workflow.";
-            return RedirectToAction(nameof(Index));
-        }
-
-        if (string.IsNullOrWhiteSpace(projectId))
-        {
-            TempData["WarningMessage"] = "OneSignal Project ID is required to trigger the workflow.";
-            return RedirectToAction(nameof(Index));
-        }
-
-        try
-        {
-            string logoUrl = await _workflowAssetStorage.SaveAndGetPublicUrlAsync(
-                logoFile,
-                clientName,
-                "logo",
-                PngOnly);
-
-            string splashUrl = await _workflowAssetStorage.SaveAndGetPublicUrlAsync(
-                splashFile,
-                clientName,
-                "splash",
-                PngOnly);
-
-            GitHubWorkflowDispatchResult result = await _gitHubWorkflowDispatchService.TriggerAsync(
-                clientName,
-                logoUrl,
-                splashUrl,
-                appBundleId,
-                appId,
-                projectId,
-                cancellationToken);
-
-            if (result.Success)
-            {
-                TempData["SuccessMessage"] = result.Message;
-            }
-            else
-            {
-                TempData["WarningMessage"] = result.Message;
-            }
-        }
-        catch (InvalidOperationException ex)
-        {
-            TempData["WarningMessage"] = ex.Message;
-        }
-
-        return RedirectToAction(nameof(Index));
-    }
-
     public async Task<IActionResult> Details(int id)
     {
         AppDeployment? deployment = await _service.GetByIdAsync(id);
@@ -279,6 +189,9 @@ public class AppDeploymentController : Controller
         return View(deployment);
     }
 
+    /// <summary>
+    /// Shows the edit form.
+    /// </summary>
     public async Task<IActionResult> Edit(int id)
     {
         AppDeployment? deployment = await _service.GetByIdAsync(id);
@@ -291,6 +204,9 @@ public class AppDeploymentController : Controller
         return View(deployment);
     }
 
+    /// <summary>
+    /// Updates an existing deployment (does not re-trigger the base workflow).
+    /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     [RequestSizeLimit(52_428_800)]
@@ -346,6 +262,9 @@ public class AppDeploymentController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    /// <summary>
+    /// Confirms deletion.
+    /// </summary>
     public async Task<IActionResult> Delete(int id)
     {
         AppDeployment? deployment = await _service.GetByIdAsync(id);
@@ -357,6 +276,9 @@ public class AppDeploymentController : Controller
         return View(deployment);
     }
 
+    /// <summary>
+    /// Deletes a deployment and its stored assets.
+    /// </summary>
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
@@ -373,6 +295,9 @@ public class AppDeploymentController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    /// <summary>
+    /// Validates required Create-form file uploads.
+    /// </summary>
     private static void ValidateRequiredFiles(
         ModelStateDictionary modelState,
         bool isEdit,
@@ -419,6 +344,9 @@ public class AppDeploymentController : Controller
         }
     }
 
+    /// <summary>
+    /// Preserves existing asset paths and secrets when the edit form leaves them blank.
+    /// </summary>
     private static void PreserveExistingPaths(AppDeployment model, AppDeployment existing)
     {
         model.MobileAppIconPath ??= existing.MobileAppIconPath;
@@ -434,6 +362,9 @@ public class AppDeploymentController : Controller
         }
     }
 
+    /// <summary>
+    /// Persists uploaded form files under wwwroot and writes relative paths onto the model.
+    /// </summary>
     private async Task SaveUploadedFilesAsync(
         int deploymentId,
         AppDeployment model,

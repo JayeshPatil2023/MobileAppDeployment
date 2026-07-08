@@ -58,23 +58,53 @@ public class WorkflowAssetStorageService : IWorkflowAssetStorageService
     }
 
     /// <summary>
-    /// Uses configured PublicBaseUrl when set; otherwise derives from the current HTTP request.
+    /// Uses configured <see cref="GitHubWorkflowDispatchOptions.PublicBaseUrl"/> when set.
+    /// Does not fall back to localhost/request host for GitHub Actions downloads — runners cannot reach it.
     /// </summary>
     private string ResolvePublicBaseUrl()
     {
-        if (!string.IsNullOrWhiteSpace(_options.PublicBaseUrl))
+        // Treat empty/whitespace as unset (Development JSON often sets "" and would override appsettings.json).
+        string configured = _options.PublicBaseUrl?.Trim() ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(configured))
         {
-            return _options.PublicBaseUrl.TrimEnd('/');
+            string baseUrl = configured.TrimEnd('/');
+            if (IsLocalOrLoopbackUrl(baseUrl))
+            {
+                throw new InvalidOperationException(
+                    "GitHub:WorkflowDispatch:PublicBaseUrl must be a publicly reachable URL (for example an ngrok HTTPS URL). " +
+                    "localhost / 127.0.0.1 values cannot be downloaded by GitHub Actions runners.");
+            }
+
+            return baseUrl;
         }
 
         HttpRequest? request = _httpContextAccessor.HttpContext?.Request;
-        if (request is not null)
+        string? requestBase = request is null ? null : $"{request.Scheme}://{request.Host}".TrimEnd('/');
+        if (!string.IsNullOrWhiteSpace(requestBase) && !IsLocalOrLoopbackUrl(requestBase))
         {
-            return $"{request.Scheme}://{request.Host}";
+            return requestBase;
         }
 
         throw new InvalidOperationException(
-            "PublicBaseUrl is not configured and no HTTP request is available to build asset URLs.");
+            "GitHub:WorkflowDispatch:PublicBaseUrl is not configured. " +
+            "Set it to your ngrok or production public HTTPS base URL so GitHub Actions can download logo/splash assets. " +
+            "Example: https://your-subdomain.ngrok-free.dev");
+    }
+
+    /// <summary>
+    /// True when the URL would not be reachable from GitHub-hosted runners.
+    /// </summary>
+    private static bool IsLocalOrLoopbackUrl(string absoluteUrl)
+    {
+        if (!Uri.TryCreate(absoluteUrl, UriKind.Absolute, out Uri? uri))
+        {
+            return true;
+        }
+
+        string host = uri.Host;
+        return string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase)
+            || host is "127.0.0.1" or "::1"
+            || host.EndsWith(".local", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>

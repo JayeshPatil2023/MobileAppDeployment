@@ -13,16 +13,14 @@ builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql
 
 // Repository & Service registration
 builder.Services.AddScoped<IAppDeploymentRepository, AppDeploymentRepository>();
-builder.Services.AddScoped<IAppDeploymentService,AppDeploymentService>();
+builder.Services.AddScoped<IAppDeploymentService, AppDeploymentService>();
 builder.Services.AddScoped<IAssetStorageService, AssetStorageService>();
 builder.Services.AddScoped<IWorkflowAssetStorageService, WorkflowAssetStorageService>();
 builder.Services.Configure<GitHubOptions>(builder.Configuration.GetSection(GitHubOptions.SectionName));
-builder.Services.Configure<RepoMergeOptions>(builder.Configuration.GetSection($"{GitHubOptions.SectionName}:RepoMerge"));
 builder.Services.Configure<GitHubWorkflowDispatchOptions>(builder.Configuration.GetSection($"{GitHubOptions.SectionName}:WorkflowDispatch"));
-builder.Services.AddScoped<IGitHubRepositoryService, GitHubRepositoryService>();
-builder.Services.AddSingleton<IRepoMergeJobStore, RepoMergeJobStore>();
-builder.Services.AddSingleton<IRepoMergeService, RepoMergeService>();
 builder.Services.AddHttpClient<IGitHubWorkflowDispatchService, GitHubWorkflowDispatchService>();
+builder.Services.AddSingleton<IWorkflowJobStore, WorkflowJobStore>();
+builder.Services.AddScoped<IWorkflowOrchestrationService, WorkflowOrchestrationService>();
 
 var app = builder.Build();
 

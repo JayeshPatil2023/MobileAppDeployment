@@ -55,4 +55,14 @@ public class GitHubWorkflowDispatchOptions
     /// GitHub Actions runners must reach this URL to download uploaded logo/splash images.
     /// </summary>
     public string PublicBaseUrl { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Maximum dispatch attempts (initial run + retries) when GitHub API calls fail.
+    /// </summary>
+    public int MaxRetries { get; set; } = 3;
+
+    /// <summary>
+    /// Delay in seconds between failed dispatch attempts.
+    /// </summary>
+    public int RetryDelaySeconds { get; set; } = 5;
 }

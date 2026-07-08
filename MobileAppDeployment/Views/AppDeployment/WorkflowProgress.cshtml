@@ -1,0 +1,49 @@
+@model MobileAppDeployment.Models.WorkflowProgressViewModel
+@{
+    ViewData["Title"] = "Triggering base workflow";
+}
+
+<div class="page-header-row">
+    <div>
+        <p class="page-title" style="margin-bottom:0">Triggering base workflow</p>
+        <p class="page-sub" style="margin-bottom:0">
+            Dispatching GitHub Actions for <strong>@Model.ClientName</strong>
+        </p>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.SavedMessage))
+{
+    <div class="alert-banner alert-banner--success" role="alert">
+        <span>@Model.SavedMessage</span>
+    </div>
+}
+
+<div class="data-card merge-progress-card" id="workflow-progress-root"
+     data-job-id="@Model.JobId"
+     data-status-url="@Url.Action("WorkflowStatus", new { jobId = Model.JobId })">
+    <div class="merge-progress-card__header">
+        <h2 class="merge-progress-card__title">@Model.ClientName</h2>
+    </div>
+
+    <div class="merge-progress-bar" role="progressbar"
+         aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+         id="workflow-progress-bar">
+        <div class="merge-progress-bar__fill" id="workflow-progress-fill" style="width:0%"></div>
+    </div>
+
+    <p class="merge-progress-status" id="workflow-progress-message">Preparing workflow...</p>
+    <p class="merge-progress-meta" id="workflow-progress-attempt" hidden></p>
+
+    <div class="alert-banner alert-banner--success merge-result-banner" id="workflow-success-banner" hidden role="alert">
+        <span id="workflow-success-text"></span>
+    </div>
+
+    <div class="alert-banner alert-banner--danger merge-result-banner" id="workflow-error-banner" hidden role="alert">
+        <span id="workflow-error-text"></span>
+    </div>
+
+    <div class="merge-progress-actions" id="workflow-progress-actions" hidden>
+        <a asp-action="Index" class="btn btn-primary">Back to deployments</a>
+    </div>
+</div>

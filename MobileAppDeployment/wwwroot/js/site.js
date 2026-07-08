@@ -187,20 +187,23 @@
     });
   }
 
-  function initMergeProgress() {
-    const root = document.getElementById('merge-progress-root');
+  function initProgressPoller() {
+    const root =
+      document.getElementById('workflow-progress-root') ||
+      document.getElementById('merge-progress-root');
     if (!root) return;
 
+    const prefix = root.id.startsWith('workflow') ? 'workflow' : 'merge';
     const statusUrl = root.dataset.statusUrl;
-    const bar = document.getElementById('merge-progress-bar');
-    const fill = document.getElementById('merge-progress-fill');
-    const messageEl = document.getElementById('merge-progress-message');
-    const attemptEl = document.getElementById('merge-progress-attempt');
-    const successBanner = document.getElementById('merge-success-banner');
-    const successText = document.getElementById('merge-success-text');
-    const errorBanner = document.getElementById('merge-error-banner');
-    const errorText = document.getElementById('merge-error-text');
-    const actions = document.getElementById('merge-progress-actions');
+    const bar = document.getElementById(`${prefix}-progress-bar`);
+    const fill = document.getElementById(`${prefix}-progress-fill`);
+    const messageEl = document.getElementById(`${prefix}-progress-message`);
+    const attemptEl = document.getElementById(`${prefix}-progress-attempt`);
+    const successBanner = document.getElementById(`${prefix}-success-banner`);
+    const successText = document.getElementById(`${prefix}-success-text`);
+    const errorBanner = document.getElementById(`${prefix}-error-banner`);
+    const errorText = document.getElementById(`${prefix}-error-text`);
+    const actions = document.getElementById(`${prefix}-progress-actions`);
 
     if (!statusUrl || !bar || !fill || !messageEl) return;
 
@@ -210,9 +213,9 @@
       const percent = Math.max(0, Math.min(100, data.percentComplete ?? 0));
       fill.style.width = `${percent}%`;
       bar.setAttribute('aria-valuenow', String(percent));
-      messageEl.textContent = data.currentMessage || 'Merging...';
+      messageEl.textContent = data.currentMessage || 'Working...';
 
-      if (data.attempt > 0 && data.maxRetries > 0) {
+      if (attemptEl && data.attempt > 0 && data.maxRetries > 0) {
         attemptEl.hidden = false;
         attemptEl.textContent = `Attempt ${data.attempt} of ${data.maxRetries}`;
       }
@@ -230,19 +233,21 @@
         pollTimer = null;
       }
 
-      actions.hidden = false;
+      if (actions) actions.hidden = false;
 
       if (data.status === 'Completed') {
-        successBanner.hidden = false;
-        successText.textContent = data.currentMessage || 'Source code merged into the client repository successfully.';
+        if (successBanner && successText) {
+          successBanner.hidden = false;
+          successText.textContent = data.currentMessage || 'Completed successfully.';
+        }
         fill.style.width = '100%';
         bar.setAttribute('aria-valuenow', '100');
         return;
       }
 
-      if (data.status === 'Failed') {
+      if (data.status === 'Failed' && errorBanner && errorText) {
         errorBanner.hidden = false;
-        errorText.textContent = data.errorMessage || 'Repository merge failed after all retry attempts.';
+        errorText.textContent = data.errorMessage || 'Operation failed after all retry attempts.';
       }
     }
 
@@ -276,6 +281,6 @@
     initFormProgress();
     initAlertDismiss();
     initFieldHelp();
-    initMergeProgress();
+    initProgressPoller();
   });
 })();
