@@ -1,0 +1,141 @@
+name: Test Merge 
+
+on:
+  workflow_dispatch:
+    inputs:
+      client_name:
+        description: "Client Repository Name"
+        required: true
+        default: "BidMaster"
+
+      client_branch:
+        description: "Client Branch"
+        required: true
+        default: "master_dev"
+
+      source_name:
+        description: "Source Repository Name"
+        required: true
+        default: "SA_AWDemoMobile"
+
+      source_branch:
+        description: "Source Branch"
+        required: true
+        default: "master_client"
+
+      logo_blob_url:
+        description: "Public URL for logo PNG"
+        required: true
+        type: string
+        
+      splash_blob_url:
+        description: "Public URL for splash PNG"
+        required: true
+        type: string
+        
+      app_bundle_id:
+        description: "Android/iOS app bundle ID"
+        required: true
+        type: string
+        
+      app_id:
+        description: "OneSignal App ID"
+        required: true
+        type: string
+        
+      project_id:
+        description: "OneSignal Project ID"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  merge:
+    name: Merge Source Changes
+    runs-on: windows-latest
+
+    env:
+      GH_PAT: ${{ secrets.GH_PAT }}
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure Git
+        shell: pwsh
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Display Inputs
+        shell: pwsh
+        run: |
+          Write-Host "Client Name   : ${{ inputs.client_name }}"
+          Write-Host "Client Branch : ${{ inputs.client_branch }}"
+          Write-Host "Source Name   : ${{ inputs.source_name }}"
+          Write-Host "Source Branch : ${{ inputs.source_branch }}"
+          Write-Host "Source Branch : ${{ inputs.logo_blob_url }}"
+          Write-Host "Source Branch : ${{ inputs.splash_blob_url }}"
+          Write-Host "Source Branch : ${{ inputs.app_bundle_id }}"
+          Write-Host "Source Branch : ${{ inputs.app_id }}"
+          Write-Host "Source Branch : ${{ inputs.project_id }}"
+
+      - name: Execute Merge Script
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          ./create_client_repo.ps1 `
+            -ClientName "${{ inputs.client_name }}" `
+            -ClientBranch "${{ inputs.client_branch }}" `
+            -SourceName "${{ inputs.source_name }}" `
+            -SourceBranch "${{ inputs.source_branch }}" `
+            -WorkingDir "${{ runner.temp }}\MergeWorkspace" `
+            -MergeTagName "merge-${{ github.run_number }}"`
+            -BaseWorkflowTemplatePath "./Base-client-deployment.yml"
+            
+      - name: Update GitHub Assets
+        if: success()
+        shell: pwsh
+        run: |
+          ./Update-GitHubAssets.ps1 `
+            -GitHubToken "${{ secrets.GH_PAT }}" `
+            -Owner "systenics" `
+            -Repo "${{ inputs.client_name }}" `
+            -Branch "${{ inputs.client_branch }}" `
+            -LogoBlobUrl "${{ inputs.logo_blob_url }}" `
+            -SplashBlobUrl "${{ inputs.splash_blob_url }}"
+            
+      - name: Update Build Environment
+        if: success()
+        shell: pwsh
+        run: |
+          ./Update-BuildEnvironment.ps1 `
+            -GitHubToken "${{ secrets.GH_PAT }}" `
+            -Owner "systenics" `
+            -Repo "${{ inputs.client_name }}" `
+            -Branch "${{ inputs.client_branch }}" `
+            -AppBundleId "${{ inputs.app_bundle_id }}" `
+            -AppId "${{ inputs.app_id }}" `
+            -ProjectId "${{ inputs.project_id }}"
+
+      - name: Trigger Client Deployment Workflow
+        if: success()
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          $repo = "systenics/${{ inputs.client_name }}"
+          $workflowFile = "Base-client-deployment.yml"
+          $ref = "${{ inputs.client_branch }}"
+      
+          Write-Host "Listing workflows for $repo..."
+          gh workflow list --repo $repo
+      
+          Write-Host "Triggering $workflowFile on $repo ($ref)..."
+          gh workflow run $workflowFile `
+            --repo $repo `
+            --ref $ref

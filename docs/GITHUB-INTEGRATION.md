@@ -107,6 +107,45 @@ After a client repository is created, the app runs `Scripts/Merge-LatestClientCh
 | `GitHub:RepoMerge:ClientBranch` | `master_dev` | Branch created/updated on client repo |
 | `GitHub:RepoMerge:WorkingDirectoryRoot` | `C:\Application` | Local clone directory |
 
+### `create_client_repo.ps1` update notes (empty-repo bootstrap + workflow discovery)
+
+The base workflow now relies on a client-side workflow file (`Base-client-deployment.yml`) that is triggered later via:
+
+```powershell
+gh workflow run Base-client-deployment.yml --repo systenics/<client> --ref <client_branch>
+```
+
+GitHub only discovers workflows that exist on the repository **default branch**.  
+For brand-new client repos created by `create_client_repo.ps1`, there is initially:
+
+- no commits
+- no default branch
+- no `.github/workflows` directory
+
+Without bootstrap logic, this caused:
+
+1. `gh workflow run ...` returning 404 (`workflow ... not found on the default branch`)
+2. merge flow failures on empty repos due to unrelated root histories
+3. downstream `Update-BuildEnvironment.ps1` 404 because source code was not merged yet
+
+To fix this, `create_client_repo.ps1` was updated to:
+
+1. Resolve default branch via `gh repo view --json defaultBranchRef`
+2. If default branch is missing (empty repo), bootstrap with `ClientBranch`
+3. Copy `Base-client-deployment.yml` into `.github/workflows/Base-client-deployment.yml`
+4. Commit/push that file and set repo default branch (`gh repo edit --default-branch ...`)
+5. Continue merge flow, using `--allow-unrelated-histories` only for this bootstrap case
+6. Use a correct local-branch existence check (`$LASTEXITCODE`) before creating tracking branches
+
+Why `--allow-unrelated-histories` is needed here:  
+the workflow bootstrap commit creates the first root commit in the client repo, while the source repo has its own unrelated root history. The first merge between these two histories must explicitly allow unrelated histories.
+
+After this change:
+
+- workflow discovery works reliably for new client repos
+- source merge proceeds in first-run scenarios
+- `sys.config/build.environment.json` is available for `Update-BuildEnvironment.ps1`
+
 ### Test merge script standalone
 
 ```powershell
@@ -288,13 +327,14 @@ on:
 
 After `create_client_repo.ps1`, run the steps in this order:
 
-| Step | Script | Purpose |
-|------|--------|---------|
+| Step | What runs | Purpose |
+|------|-----------|---------|
 | 1 | `create_client_repo.ps1` | Create/merge client repo |
-| 2 | `Copy-ClientDeploymentWorkflow.ps1` | Copy `Base-client-deployment.yml` into client repo |
-| 3 | `Update-GitHubAssets.ps1` | Update logo/splash in client repo |
-| 4 | `Update-BuildEnvironment.ps1` | Update `sys.config/build.environment.json` |
-| 5 | `Invoke-ClientDeploymentWorkflow.ps1` | Trigger client repo deployment workflow |
+| 2 | `Update-GitHubAssets.ps1` | Update logo/splash in client repo |
+| 3 | `Update-BuildEnvironment.ps1` | Update `sys.config/build.environment.json` |
+| 4 | `gh workflow run` (inline) | Trigger `Base-client-deployment.yml` in the **client** repo |
+
+`Base-client-deployment.yml` is assumed to already exist in each client repo under `.github/workflows/`. Do **not** copy it from the base workflow.
 
 ```yaml
       - name: Execute Merge Script
@@ -309,18 +349,6 @@ After `create_client_repo.ps1`, run the steps in this order:
             -SourceBranch "${{ inputs.source_branch }}" `
             -WorkingDir "${{ runner.temp }}\MergeWorkspace" `
             -MergeTagName "merge-${{ github.run_number }}"
-
-      - name: Copy Client Deployment Workflow
-        if: success()
-        shell: pwsh
-        run: |
-          ./Copy-ClientDeploymentWorkflow.ps1 `
-            -GitHubToken "${{ secrets.GH_PAT }}" `
-            -Owner "systenics" `
-            -Repo "${{ inputs.client_name }}" `
-            -Branch "${{ inputs.client_branch }}" `
-            -SourceFilePath "./Base-client-deployment.yml" `
-            -WorkingDir "${{ runner.temp }}\MergeWorkspace"
 
       - name: Update GitHub Assets
         if: success()
@@ -350,35 +378,62 @@ After `create_client_repo.ps1`, run the steps in this order:
       - name: Trigger Client Deployment Workflow
         if: success()
         shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
-          ./Invoke-ClientDeploymentWorkflow.ps1 `
-            -GitHubToken "${{ secrets.GH_PAT }}" `
-            -Owner "systenics" `
-            -Repo "${{ inputs.client_name }}" `
-            -Branch "${{ inputs.client_branch }}" `
-            -WorkflowFileName "Base-client-deployment.yml" `
-            -WaitSeconds 15
+          $repo = "systenics/${{ inputs.client_name }}"
+          $workflowFile = "Base-client-deployment.yml"
+          $ref = "${{ inputs.client_branch }}"
+
+          Write-Host "Listing workflows for $repo..."
+          gh workflow list --repo $repo
+
+          # GitHub only registers workflows that exist on the DEFAULT branch.
+          # If Base-client-deployment.yml lives only on master_dev, this step 404s.
+          Write-Host "Triggering $workflowFile on $repo ($ref)..."
+          gh workflow run $workflowFile `
+            --repo $repo `
+            --ref $ref
 ```
 
-### Client deployment workflow template
+If the client workflow accepts inputs (same as your other project’s `-f` pattern):
 
-Keep `Base-client-deployment.yml` in `SA_BaseMVCProject` (repo root). The copy script publishes it to:
+```yaml
+          gh workflow run $workflowFile `
+            --repo $repo `
+            --ref $ref `
+            -f some_input=value
+```
 
-`.github/workflows/Base-client-deployment.yml`
+### Client deployment workflow requirements
 
-in the **client repo**. The client workflow must include `workflow_dispatch` so the base workflow can trigger it via API.
+In the **client repo**, ensure `.github/workflows/Base-client-deployment.yml` includes:
 
-A starter template lives at `Scripts/Base-client-deployment.yml` in this project — replace the placeholder deployment step with your real mobile build/deploy pipeline.
+```yaml
+on:
+  workflow_dispatch:
+```
 
-`GH_PAT` must have **Actions: Read and write** on both the base repo and client repos.
+**Important — default branch required**
 
-Copy these scripts into `SA_BaseMVCProject`:
+GitHub Actions discovers workflows from the repository **default branch** only.  
+If `Base-client-deployment.yml` exists only on `master_dev` (as in your screenshot) and the default branch is `master`/`main`/`master_client`, `gh workflow run` fails with:
 
-- `Copy-ClientDeploymentWorkflow.ps1`
-- `Invoke-ClientDeploymentWorkflow.ps1`
+`HTTP 404: workflow Base-client-deployment.yml not found on the default branch`
+
+Do **one** of the following:
+
+1. **(Recommended)** Merge / copy `.github/workflows/Base-client-deployment.yml` onto the client repo’s **default branch**, then keep triggering with `--ref master_dev`.
+2. Or change the client repo default branch to `master_dev` (Settings → General → Default branch).
+3. As a temporary check, run `gh workflow list --repo systenics/AuctionPro_10` — if the workflow is missing from that list, GitHub has not registered it yet.
+
+`GH_PAT` must have **Actions: Read and write** (and access to the client repos).
+
+Copy these scripts into `SA_BaseMVCProject` (no separate invoke/copy PS scripts needed for deployment trigger):
+
 - `Update-GitHubAssets.ps1`
 - `Update-BuildEnvironment.ps1`
-- `Base-client-deployment.yml` (if not already there)
+- `create_client_repo.ps1`
 
 `Update-BuildEnvironment.ps1` updates `sys.config/build.environment.json` in the **client repo** (both `release` and `debug` sections):
 
@@ -434,7 +489,6 @@ Invalid names throw a validation error before the API call.
 | GitHub workflow cannot download logo/splash | Set `PublicBaseUrl` to a public URL (ngrok or deployed server), not localhost |
 | `Update-GitHubAssets` 404 with `assets/=branch` in URL | PowerShell parsed `$RepoPath?ref` incorrectly; use updated script with `${RepoPath}?ref=${Branch}` |
 | Client deployment workflow not triggered | Ensure `Base-client-deployment.yml` has `workflow_dispatch` and `GH_PAT` has Actions write on client repo |
-| `404` on Copy Client Deployment Workflow | Use git-based `Copy-ClientDeploymentWorkflow.ps1` and pass `-WorkingDir "${{ runner.temp }}\MergeWorkspace"` |
-| `404` on workflow dispatch | Workflow file not yet visible; increase `WaitSeconds` in `Invoke-ClientDeploymentWorkflow.ps1` |
+| `gh workflow run` 404 / not found on the default branch | Workflow file exists only on `master_dev`; put it on the repo default branch too (or change default branch) |
 
 Check application logs for entries from `GitHubRepositoryService` and `AppDeploymentController`.

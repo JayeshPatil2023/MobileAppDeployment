@@ -14,13 +14,22 @@ param(
     [string]$ClientRepoUrl,
     [string]$SourceRepoUrl,
     [string]$WorkingDir,
-    [string]$MergeTagName = "merged-from-source-$(Get-Date -Format 'yyyyMMddHHmmss')"
+    [string]$MergeTagName = "merged-from-source-$(Get-Date -Format 'yyyyMMddHHmmss')",
+    [string]$BaseWorkflowTemplatePath = "./Base-client-deployment.yml",
+    [string]$ClientWorkflowTargetPath = ".github/workflows/Base-client-deployment.yml"
 )
 
 $ErrorActionPreference = 'Stop'
 $OrganizationName = 'systenics'
 $TeamSlug = 'auctionworx_team'
 $CreateRepository = 1
+$script:BootstrappedDefaultBranch = $false
+
+if (-not (Test-Path $BaseWorkflowTemplatePath)) {
+    throw "Base workflow template not found: $BaseWorkflowTemplatePath"
+}
+
+$ResolvedBaseWorkflowTemplatePath = (Resolve-Path $BaseWorkflowTemplatePath).Path
 
 function Create-GitHubRepository {
     $repo = "$OrganizationName/$ClientName"
@@ -61,6 +70,100 @@ function Create-GitHubRepository {
     Write-Output "::endgroup::"
 }
 
+function Ensure-ClientWorkflowOnDefaultBranch {
+    param(
+        [string]$RepoFullName
+    )
+
+    Write-Output "::group::Ensure Client Deployment Workflow on Default Branch"
+
+    $defaultBranchRaw = gh repo view $RepoFullName --json defaultBranchRef --jq ".defaultBranchRef.name"
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to resolve default branch for $RepoFullName."
+    }
+
+    $defaultBranch = "$defaultBranchRaw".Trim()
+    if ([string]::IsNullOrWhiteSpace($defaultBranch) -or $defaultBranch -eq "null") {
+        # Brand new repos can be empty and have no default branch yet.
+        # Bootstrap with ClientBranch so workflow discovery and dispatch can work.
+        $defaultBranch = $ClientBranch
+        $script:BootstrappedDefaultBranch = $true
+        Write-Output "No default branch found (empty repository). Bootstrapping with branch: $defaultBranch"
+    }
+
+    Write-Output "DefaultBranch           : $defaultBranch"
+    Write-Output "WorkflowTemplate        : $ResolvedBaseWorkflowTemplatePath"
+    Write-Output "WorkflowTargetPath      : $ClientWorkflowTargetPath"
+
+    $previousBranchRaw = git rev-parse --abbrev-ref HEAD 2>$null
+    $previousBranch = "$previousBranchRaw".Trim()
+
+    git fetch origin $defaultBranch 2>$null
+    $remoteDefaultBranchExists = $LASTEXITCODE -eq 0
+
+    git show-ref --verify --quiet "refs/heads/$defaultBranch"
+    if ($LASTEXITCODE -eq 0) {
+        git checkout $defaultBranch
+    }
+    elseif ($remoteDefaultBranchExists) {
+        git checkout -b $defaultBranch "origin/$defaultBranch"
+    }
+    else {
+        # Empty repository path: create the first local branch.
+        git checkout -b $defaultBranch
+    }
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to checkout default branch $defaultBranch."
+    }
+
+    $targetFullPath = Join-Path (Get-Location) ($ClientWorkflowTargetPath -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+    $targetDirectory = Split-Path $targetFullPath -Parent
+    if (-not (Test-Path $targetDirectory)) {
+        New-Item -Path $targetDirectory -ItemType Directory -Force | Out-Null
+    }
+
+    Copy-Item -Path $ResolvedBaseWorkflowTemplatePath -Destination $targetFullPath -Force
+
+    git add $ClientWorkflowTargetPath
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to stage $ClientWorkflowTargetPath."
+    }
+
+    git diff --cached --quiet
+    if ($LASTEXITCODE -eq 0) {
+        Write-Output "Workflow file is already up to date on default branch."
+    }
+    else {
+        git commit -m "Add/update Base-client-deployment workflow on default branch"
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to commit workflow file on default branch."
+        }
+
+        git push -u origin $defaultBranch
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to push workflow file to origin/$defaultBranch."
+        }
+
+        Write-Output "Workflow file committed to $defaultBranch."
+
+        # Ensure GitHub knows which branch is default (important for workflow discovery).
+        gh repo edit $RepoFullName --default-branch $defaultBranch
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to set default branch to $defaultBranch on $RepoFullName."
+        }
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($previousBranch) -and $previousBranch -ne "HEAD" -and $previousBranch -ne $defaultBranch) {
+        git checkout $previousBranch
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to switch back to $previousBranch."
+        }
+    }
+
+    Write-Output "::endgroup::"
+}
+
 
 
 
@@ -97,6 +200,8 @@ Write-Output "SourceName     : $SourceName"
 Write-Output "SourceBranch   : $SourceBranch"
 Write-Output "WorkingDir     : $WorkingDir"
 Write-Output "MergeTagName   : $MergeTagName"
+Write-Output "WorkflowTemplatePath : $ResolvedBaseWorkflowTemplatePath"
+Write-Output "ClientWorkflowTarget : $ClientWorkflowTargetPath"
 Write-Output "::endgroup::"
 
 try {
@@ -121,6 +226,8 @@ try {
     # Move into the working directory
     Set-Location $WorkingDir
 
+    Ensure-ClientWorkflowOnDefaultBranch -RepoFullName "$OrganizationName/$ClientName"
+
     # Add the source repo as a remote
     Write-Output "::group::Configure Source Remote"
     if (-not (git remote | Select-String '^source$')) {
@@ -135,7 +242,8 @@ try {
     Write-Output "::endgroup::"
 
     # Check if local or remote branch exists
-    $branchExists = git show-ref --verify --quiet "refs/heads/$ClientBranch"
+    git show-ref --verify --quiet "refs/heads/$ClientBranch"
+    $branchExists = $LASTEXITCODE -eq 0
     $remoteBranchExists = git ls-remote --heads origin $ClientBranch
 
     if (-not $branchExists -and -not $remoteBranchExists) {
@@ -156,7 +264,13 @@ try {
     # Merge latest source changes
     Write-Output "::group::Merge Source Changes"
     git fetch source
-    git merge source/$SourceBranch --no-commit --no-ff
+    if ($script:BootstrappedDefaultBranch) {
+        # Newly created repos have unrelated root history (workflow bootstrap commit).
+        git merge source/$SourceBranch --no-commit --no-ff --allow-unrelated-histories
+    }
+    else {
+        git merge source/$SourceBranch --no-commit --no-ff
+    }
 
     if ($LASTEXITCODE -ne 0) {
         Write-Output "Merge conflicts detected."
