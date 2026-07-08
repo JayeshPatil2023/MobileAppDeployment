@@ -2,10 +2,14 @@
 
 ## Overview
 
+> **Form access:** Create is token-gated. Clients reach the form via
+> `/AppDeployment/Form/{token}` issued by `POST /api/form-access-tokens`.
+> See [`docs/TOKEN-BASED-FORM-ACCESS.md`](TOKEN-BASED-FORM-ACCESS.md).
+
 After a successful **New App Deployment** (Create) form submit:
 
-1. Form inputs are validated
-2. Deployment data is saved to PostgreSQL
+1. Form inputs are validated (and the form-access token is verified)
+2. Deployment data is saved to PostgreSQL and the access token is linked to that deployment
 3. Mobile App Icon / Launch Image are also published under `wwwroot/uploads/workflow-assets/` for GitHub Actions to download
 4. The app dispatches the **base workflow** in `systenics/SA_BaseMVCProject` via GitHub `workflow_dispatch`
 5. The UI shows **live progress** (with retries) while the dispatch API call is in flight

@@ -2,19 +2,32 @@
 @{
     ViewData["Title"] = "Edit App Deployment";
     ViewData["FormLayout"] = true;
+    string? formToken = ViewBag.FormToken as string;
+    bool tokenEdit = !string.IsNullOrEmpty(formToken);
 }
 
 <p class="page-title">Edit app deployment</p>
 <p class="page-sub">Update submission details for <strong>@Model.AppName</strong>. Leave asset uploads empty to keep existing files.</p>
 
-<form asp-action="Edit" method="post" enctype="multipart/form-data" id="deployment-form">
+<form asp-action="Edit" asp-route-id="@Model.Id" asp-route-token="@formToken" method="post" enctype="multipart/form-data" id="deployment-form">
     <input type="hidden" asp-for="Id" />
+    @if (tokenEdit)
+    {
+        <input type="hidden" name="token" value="@formToken" />
+    }
     <div asp-validation-summary="All"></div>
 
     <partial name="_FormFields" model="Model" />
 
     <div class="form-footer">
-        <a asp-action="Index" class="btn btn-ghost">Cancel</a>
+        @if (tokenEdit)
+        {
+            <span class="footer-hint cell-muted">Use your original form link anytime to continue editing.</span>
+        }
+        else
+        {
+            <a asp-action="Index" class="btn btn-ghost">Cancel</a>
+        }
         <div class="footer-right">
             <button type="submit" class="btn btn-primary">Update deployment</button>
         </div>

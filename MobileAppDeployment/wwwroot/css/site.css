@@ -894,6 +894,7 @@ input[type="file"].file-hidden { display: none; }
   flex-wrap: wrap;
 }
 .footer-right { display: flex; align-items: center; gap: .75rem; }
+.footer-hint { font-size: 13px; max-width: 28rem; line-height: 1.4; }
 
 /* ── Empty state ─────────────────────────────────────────────── */
 .empty-state {

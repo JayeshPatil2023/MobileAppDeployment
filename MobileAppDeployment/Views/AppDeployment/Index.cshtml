@@ -8,7 +8,6 @@
         <p class="page-title" style="margin-bottom:0">App deployments</p>
         <p class="page-sub" style="margin-bottom:0">Manage mobile app store submission configurations</p>
     </div>
-    <a asp-action="Create" class="btn btn-primary">+ New deployment</a>
 </div>
 
 @if (TempData["SuccessMessage"] != null)
@@ -27,11 +26,17 @@
     </div>
 }
 
+<div class="alert-banner alert-banner--warn" role="status" style="margin-bottom:1.25rem">
+    <span>
+        New deployments are created via a secure tokenized form link.
+        Issue a token with <code>POST /api/form-access-tokens</code> (see docs) and share the returned <code>formUrl</code> with the client.
+    </span>
+</div>
+
 @if (!Model.Any())
 {
     <div class="empty-state">
-        <p>No app deployments yet. Create your first submission configuration to get started.</p>
-        <a asp-action="Create" class="btn btn-primary">Create deployment</a>
+        <p>No app deployments yet. Issue a form-access token and share the client link to get started.</p>
     </div>
 }
 else

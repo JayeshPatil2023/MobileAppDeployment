@@ -2,18 +2,20 @@
 @{
     ViewData["Title"] = "Create App Deployment";
     ViewData["FormLayout"] = true;
+    string? formToken = ViewBag.FormToken as string;
 }
 
 <p class="page-title">New app deployment</p>
 <p class="page-sub">Configure your mobile app submission details below. Fields marked <span style="color:var(--danger)">*</span> are required.</p>
 
-<form asp-action="Create" method="post" enctype="multipart/form-data" id="deployment-form">
+<form asp-action="Create" asp-route-token="@formToken" method="post" enctype="multipart/form-data" id="deployment-form">
+    <input type="hidden" name="token" value="@formToken" />
     <div asp-validation-summary="All"></div>
 
     <partial name="_FormFields" model="Model" />
 
     <div class="form-footer">
-        <a asp-action="Index" class="btn btn-ghost">Cancel</a>
+        <span class="footer-hint cell-muted">Secure token form — bookmark this page link to return later.</span>
         <div class="footer-right">
             <button type="submit" class="btn btn-primary">Save deployment</button>
         </div>

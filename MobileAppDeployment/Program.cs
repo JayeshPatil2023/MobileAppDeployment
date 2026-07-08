@@ -2,6 +2,7 @@ using MobileAppDeployment.Services;
 using MobileAppDeployment.Services.GitHub;
 using MobileAppDeployment.Repositories;
 using MobileAppDeployment.Data;
+using MobileAppDeployment.Options;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +17,9 @@ builder.Services.AddScoped<IAppDeploymentRepository, AppDeploymentRepository>();
 builder.Services.AddScoped<IAppDeploymentService, AppDeploymentService>();
 builder.Services.AddScoped<IAssetStorageService, AssetStorageService>();
 builder.Services.AddScoped<IWorkflowAssetStorageService, WorkflowAssetStorageService>();
+builder.Services.AddScoped<IFormAccessTokenRepository, FormAccessTokenRepository>();
+builder.Services.AddScoped<IFormAccessTokenService, FormAccessTokenService>();
+builder.Services.Configure<FormAccessOptions>(builder.Configuration.GetSection(FormAccessOptions.SectionName));
 builder.Services.Configure<GitHubOptions>(builder.Configuration.GetSection(GitHubOptions.SectionName));
 builder.Services.Configure<GitHubWorkflowDispatchOptions>(builder.Configuration.GetSection($"{GitHubOptions.SectionName}:WorkflowDispatch"));
 builder.Services.AddHttpClient<IGitHubWorkflowDispatchService, GitHubWorkflowDispatchService>();

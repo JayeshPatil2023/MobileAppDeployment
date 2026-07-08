@@ -9,6 +9,16 @@ namespace MobileAppDeployment.Controllers;
 /// <summary>
 /// MVC controller for app deployment CRUD and base workflow triggering.
 /// </summary>
+/// <remarks>
+/// <para>
+/// Public Create access is token-gated: clients open <c>/AppDeployment/Form/{token}</c>.
+/// Tokens are issued by admins via <c>POST /api/form-access-tokens</c>.
+/// </para>
+/// <para>
+/// After the first successful Create submit, the same token URL opens the Edit form.
+/// Index / Details / Delete remain available for in-app admin browsing (no login yet).
+/// </para>
+/// </remarks>
 public class AppDeploymentController : Controller
 {
     private static readonly string[] PngOnly = [".png"];
@@ -19,6 +29,7 @@ public class AppDeploymentController : Controller
     private readonly IAppDeploymentService _service;
     private readonly IAssetStorageService _assetStorage;
     private readonly IWorkflowOrchestrationService _workflowOrchestration;
+    private readonly IFormAccessTokenService _formAccessTokenService;
     private readonly ILogger<AppDeploymentController> _logger;
 
     /// <summary>
@@ -28,16 +39,18 @@ public class AppDeploymentController : Controller
         IAppDeploymentService service,
         IAssetStorageService assetStorage,
         IWorkflowOrchestrationService workflowOrchestration,
+        IFormAccessTokenService formAccessTokenService,
         ILogger<AppDeploymentController> logger)
     {
         _service = service;
         _assetStorage = assetStorage;
         _workflowOrchestration = workflowOrchestration;
+        _formAccessTokenService = formAccessTokenService;
         _logger = logger;
     }
 
     /// <summary>
-    /// Lists saved deployments.
+    /// Lists saved deployments (admin/internal view).
     /// </summary>
     public async Task<IActionResult> Index()
     {
@@ -46,15 +59,57 @@ public class AppDeploymentController : Controller
     }
 
     /// <summary>
-    /// Shows the New App Deployment form.
+    /// Entry point for a client magic-link: shows Create if the token is unused, otherwise Edit.
     /// </summary>
-    public IActionResult Create()
+    /// <param name="token">Opaque form-access token from the shareable URL.</param>
+    [HttpGet]
+    [Route("AppDeployment/Form/{token}")]
+    public async Task<IActionResult> Form(string token)
     {
-        return View(new AppDeployment());
+        FormAccessToken? access = await _formAccessTokenService.ResolveActiveAsync(token);
+        if (access is null)
+        {
+            return View("InvalidToken");
+        }
+
+        // Already submitted → edit the linked deployment with the same shareable URL.
+        if (access.AppDeploymentId is int deploymentId)
+        {
+            AppDeployment? deployment = await _service.GetByIdAsync(deploymentId);
+            if (deployment is null)
+            {
+                // Token still active but deployment was deleted — block until admin re-issues.
+                _logger.LogWarning(
+                    "Form token {TokenId} points at missing deployment {DeploymentId}.",
+                    access.Id,
+                    deploymentId);
+                return View("InvalidToken");
+            }
+
+            deployment.OneSignalRestApiKey = string.Empty;
+            ViewBag.FormToken = access.Token;
+            return View("Edit", deployment);
+        }
+
+        // First visit — blank Create form with App Name prefilled from token issuance.
+        var model = new AppDeployment
+        {
+            AppName = TruncateForAppName(access.ClientAppName)
+        };
+        ViewBag.FormToken = access.Token;
+        return View("Create", model);
     }
 
     /// <summary>
-    /// Saves deployment details, then triggers the base GitHub Actions workflow.
+    /// Open Create without a token is disabled — clients must use the magic link.
+    /// </summary>
+    public IActionResult Create()
+    {
+        return View("InvalidToken");
+    }
+
+    /// <summary>
+    /// Saves deployment details for a valid unused token, then triggers the base GitHub Actions workflow.
     /// </summary>
     /// <remarks>
     /// Field mapping to workflow inputs:
@@ -69,6 +124,7 @@ public class AppDeploymentController : Controller
     [ValidateAntiForgeryToken]
     [RequestSizeLimit(52_428_800)]
     public async Task<IActionResult> Create(
+        string token,
         AppDeployment model,
         IFormFile? mobileAppIconFile,
         IFormFile? launchImageFile,
@@ -78,6 +134,20 @@ public class AppDeploymentController : Controller
         IFormFile? firebaseAndroidConfigFile,
         CancellationToken cancellationToken)
     {
+        FormAccessToken? access = await _formAccessTokenService.ResolveActiveAsync(token);
+        if (access is null)
+        {
+            return View("InvalidToken");
+        }
+
+        // Business rule: a token that already created a deployment cannot Create again.
+        if (access.AppDeploymentId.HasValue)
+        {
+            return RedirectToAction(nameof(Form), new { token = access.Token });
+        }
+
+        ViewBag.FormToken = access.Token;
+
         ValidateRequiredFiles(
             ModelState,
             isEdit: false,
@@ -106,6 +176,9 @@ public class AppDeploymentController : Controller
                 firebaseIosConfigFile,
                 firebaseAndroidConfigFile);
             await _service.UpdateAsync(model);
+
+            // Link token → deployment so later Form visits open Edit instead of Create.
+            await _formAccessTokenService.MarkSubmittedAsync(access.Token, id);
 
             // DB save first, then dispatch the base GitHub Actions workflow.
             string jobId = await _workflowOrchestration.StartWorkflowJobAsync(
@@ -190,10 +263,22 @@ public class AppDeploymentController : Controller
     }
 
     /// <summary>
-    /// Shows the edit form.
+    /// Shows the edit form (admin path by id, or client path when <paramref name="token"/> is supplied).
     /// </summary>
-    public async Task<IActionResult> Edit(int id)
+    public async Task<IActionResult> Edit(int id, string? token = null)
     {
+        // Client token path: only allow editing the deployment linked to that token.
+        if (!string.IsNullOrWhiteSpace(token))
+        {
+            FormAccessToken? access = await _formAccessTokenService.ResolveActiveAsync(token);
+            if (access is null || access.AppDeploymentId != id)
+            {
+                return View("InvalidToken");
+            }
+
+            ViewBag.FormToken = access.Token;
+        }
+
         AppDeployment? deployment = await _service.GetByIdAsync(id);
         if (deployment == null)
         {
@@ -207,11 +292,16 @@ public class AppDeploymentController : Controller
     /// <summary>
     /// Updates an existing deployment (does not re-trigger the base workflow).
     /// </summary>
+    /// <remarks>
+    /// When <paramref name="token"/> is present, the token must own <paramref name="id"/>.
+    /// Admin edits from Index omit the token.
+    /// </remarks>
     [HttpPost]
     [ValidateAntiForgeryToken]
     [RequestSizeLimit(52_428_800)]
     public async Task<IActionResult> Edit(
         int id,
+        string? token,
         AppDeployment model,
         IFormFile? mobileAppIconFile,
         IFormFile? launchImageFile,
@@ -223,6 +313,18 @@ public class AppDeploymentController : Controller
         if (id != model.Id)
         {
             return BadRequest();
+        }
+
+        bool isTokenEdit = !string.IsNullOrWhiteSpace(token);
+        if (isTokenEdit)
+        {
+            FormAccessToken? access = await _formAccessTokenService.ResolveActiveAsync(token!);
+            if (access is null || access.AppDeploymentId != id)
+            {
+                return View("InvalidToken");
+            }
+
+            ViewBag.FormToken = access.Token;
         }
 
         AppDeployment? existing = await _service.GetByIdAsync(id);
@@ -259,6 +361,13 @@ public class AppDeploymentController : Controller
         }
 
         TempData["SuccessMessage"] = "App deployment details updated successfully.";
+
+        // Client stays on the tokenized form link; admin returns to the list.
+        if (isTokenEdit)
+        {
+            return RedirectToAction(nameof(Form), new { token });
+        }
+
         return RedirectToAction(nameof(Index));
     }
 
@@ -293,6 +402,16 @@ public class AppDeploymentController : Controller
 
         TempData["SuccessMessage"] = "App deployment deleted successfully.";
         return RedirectToAction(nameof(Index));
+    }
+
+    /// <summary>
+    /// Caps prefilled App Name to the model's max length so validation does not fail on first render.
+    /// </summary>
+    private static string TruncateForAppName(string clientAppName)
+    {
+        const int maxLength = 30;
+        string trimmed = clientAppName.Trim();
+        return trimmed.Length <= maxLength ? trimmed : trimmed[..maxLength];
     }
 
     /// <summary>
