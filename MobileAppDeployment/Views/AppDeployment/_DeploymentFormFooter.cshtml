@@ -28,13 +28,13 @@
                   method="post"
                   class="deployment-start-form">
                 @Html.AntiForgeryToken()
-                <button type="submit" class="btn btn-outline">Start App Deployment Process</button>
+                <button type="submit" class="btn btn-start">Start App Deployment Process</button>
             </form>
         }
         else
         {
             <button type="button"
-                    class="btn btn-outline"
+                    class="btn btn-start"
                     disabled
                     title="Save the deployment first to enable workflow execution">
                 Start App Deployment Process

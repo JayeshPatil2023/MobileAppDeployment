@@ -881,6 +881,23 @@ input[type="file"].file-hidden { display: none; }
 .btn-outline:hover { background: var(--bg-sub); color: var(--text-primary); }
 .btn-outline--danger { color: var(--danger); border-color: #FCA5A5; }
 .btn-outline--danger:hover { background: var(--danger-light); }
+.btn-start {
+  background: #16A34A;
+  color: #fff;
+  border-color: #16A34A;
+}
+.btn-start:hover {
+  background: #15803D;
+  border-color: #15803D;
+  color: #fff;
+}
+.btn-start:disabled,
+.btn-start:disabled:hover {
+  background: #86EFAC;
+  border-color: #86EFAC;
+  color: #14532D;
+  cursor: not-allowed;
+}
 
 /* ── Form footer ─────────────────────────────────────────────── */
 .form-footer {
