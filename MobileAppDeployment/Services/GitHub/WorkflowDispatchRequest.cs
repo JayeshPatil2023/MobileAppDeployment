@@ -1,8 +1,12 @@
 namespace MobileAppDeployment.Services.GitHub;
 
 /// <summary>
-/// Input required to store assets and dispatch the base GitHub Actions workflow.
+/// Input required to store assets and dispatch the base GitHub Actions workflow from uploaded form files.
 /// </summary>
+/// <remarks>
+/// Prefer <see cref="IWorkflowOrchestrationService.StartWorkflowJobFromDeploymentAsync"/> for the
+/// production flow after the user explicitly clicks <strong>Start App Deployment Process</strong>.
+/// </remarks>
 public class WorkflowDispatchRequest
 {
     /// <summary>

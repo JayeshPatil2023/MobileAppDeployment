@@ -1,0 +1,46 @@
+@{
+    int? deploymentId = ViewBag.DeploymentId as int?;
+    string? formToken = ViewBag.FormToken as string;
+    bool canStartDeployment = deploymentId is > 0;
+    bool tokenEdit = !string.IsNullOrEmpty(formToken);
+}
+
+<div class="form-footer">
+    @if (tokenEdit)
+    {
+        <span class="footer-hint cell-muted">Use your original form link anytime to continue editing.</span>
+    }
+    else if (canStartDeployment)
+    {
+        <a asp-action="Index" class="btn btn-ghost">Back to list</a>
+    }
+    else
+    {
+        <span class="footer-hint cell-muted">Secure token form — bookmark this page link to return later.</span>
+    }
+
+    <div class="footer-right">
+        @if (canStartDeployment)
+        {
+            <form asp-action="StartDeployment"
+                  asp-route-id="@deploymentId"
+                  asp-route-token="@formToken"
+                  method="post"
+                  class="deployment-start-form">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-outline">Start App Deployment Process</button>
+            </form>
+        }
+        else
+        {
+            <button type="button"
+                    class="btn btn-outline"
+                    disabled
+                    title="Save the deployment first to enable workflow execution">
+                Start App Deployment Process
+            </button>
+        }
+
+        <button type="submit" class="btn btn-primary" form="deployment-form">Save Deployment</button>
+    </div>
+</div>

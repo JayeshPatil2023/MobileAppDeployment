@@ -25,7 +25,7 @@ Without authentication, anyone who knew `/AppDeployment/Create` could:
 
 - open the New App Deployment form
 - submit deployment data
-- trigger the base GitHub Actions workflow
+- start the base GitHub Actions workflow (if they reached Edit and clicked Start)
 
 Tokenized links solve that for clients without building a full identity system yet.
 
@@ -69,12 +69,20 @@ Client POST Create (token required)
   • validates token again
   • saves AppDeployment + assets
   • MarkSubmittedAsync(token, deploymentId)
-  • starts GitHub base workflow
+  • redirects to same form URL (Edit) with success message — no workflow yet
+        │
+        ▼
+Client reviews / edits on Edit form
+  POST Edit with same token → updates data (no workflow)
+        │
+        ▼
+Client POST StartDeployment (token + deployment id)
+  • validates token owns deployment
+  • starts GitHub base workflow from saved assets
   • redirects to WorkflowProgress
         │
         ▼
 Later GET same formUrl → Edit form
-Client POST Edit with same token → updates data (no workflow re-trigger)
 ```
 
 ---
@@ -187,7 +195,7 @@ That prevents parallel magic links for one client/app pair.
 | `GET /AppDeployment/Create`       | Blocked → InvalidToken view                             |
 | `POST /AppDeployment/Create`      | Requires valid unused token in form body/route          |
 | `POST /AppDeployment/Edit/{id}`   | Optional `token`; when present must own that deployment |
-
+| `POST /AppDeployment/StartDeployment/{id}` | Optional `token`; starts workflow from saved deployment |
 
 Create and Edit views include a hidden `token` field so posts keep the same capability.
 
@@ -200,19 +208,19 @@ After the first successful Create:
 3. Opening the same form URL loads **Edit** instead of Create
 4. Edit posts with the token must target that linked Id only (cannot edit someone else’s deployment)
 
+### Save vs start workflow
 
+Saving and starting the deployment process are **decoupled**:
 
-### Create still triggers workflow
+| Action | Endpoint | Starts GitHub workflow? |
+|--------|----------|-------------------------|
+| **Save deployment** (Create first time) | `POST Create` | No — redirects to Edit with success message |
+| **Save deployment** (Edit) | `POST Edit` | No — stays on Edit with success message |
+| **Start App Deployment Process** | `POST StartDeployment` | Yes — uses saved DB row + asset paths |
 
-Token gating does not change the GitHub dispatch behavior documented in `docs/GITHUB-INTEGRATION.md`.
-First Create still:
+On Create, **Start App Deployment Process** is shown but **disabled** until the deployment exists (after first save, on Edit it is enabled).
 
-1. saves deployment + assets
-2. links the token
-3. starts the base workflow job
-4. redirects to WorkflowProgress
-
-Edit (token or admin) does **not** re-trigger the workflow.
+See `docs/GITHUB-INTEGRATION.md` for dispatch details, retries, and `PublicBaseUrl` / ngrok.
 
 ---
 
@@ -291,8 +299,8 @@ dotnet ef database update
 | Repository | `Repositories/FormAccessTokenRepository.cs`                                   | EF queries                                  |
 | Service    | `Services/FormAccessTokenService.cs`                                          | Issue / resolve / mark submitted; token RNG |
 | Admin API  | `Controllers/FormAccessTokensController.cs`                                   | `POST /api/form-access-tokens`              |
-| Form MVC   | `Controllers/AppDeploymentController.cs`                                      | `Form`, gated `Create`/`Edit`               |
-| Views      | `Views/AppDeployment/Create.cshtml`, `Edit.cshtml`, `InvalidToken.cshtml`     | Token hidden field + invalid UX             |
+| Form MVC   | `Controllers/AppDeploymentController.cs`                                      | `Form`, gated `Create`/`Edit`/`StartDeployment` |
+| Views      | `Views/AppDeployment/Create.cshtml`, `Edit.cshtml`, `_DeploymentFormFooter.cshtml`, `InvalidToken.cshtml` | Save + Start buttons, token hidden field |
 | DbContext  | `Data/ApplicationDbContext.cs`                                                | `FormAccessTokens` set + indexes            |
 
 
@@ -338,11 +346,12 @@ Those can be added later if/when full authentication ships.
 4. Postman: create token with correct `X-Api-Key` → receive `formUrl`.
 5. Postman: wrong API key → 401.
 6. Open `formUrl` → Create form, App Name prefilled from `clientAppName`.
-7. Submit Create successfully → workflow progress.
+7. Submit Create successfully → success message, Edit form, **Start** button enabled.
 8. Open same `formUrl` again → Edit form.
-9. Update a field and submit → success, stay on token form.
-10. Postman issue again for same client/app → same token, `alreadyExisted: true`.
-11. Index no longer shows “+ New deployment” CTA; banner points admins at the API.
+9. Update a field and submit Save → success, stay on Edit (no workflow).
+10. Click **Start App Deployment Process** → workflow progress page.
+11. Postman issue again for same client/app → same token, `alreadyExisted: true`.
+12. Index no longer shows “+ New deployment” CTA; banner points admins at the API.
 
 ---
 
@@ -350,6 +359,6 @@ Those can be added later if/when full authentication ships.
 
 ## Related docs
 
-- `docs/GITHUB-INTEGRATION.md` — what happens after Create submit (workflow dispatch)
+- `docs/GITHUB-INTEGRATION.md` — what happens when the user clicks **Start App Deployment Process**
 - `docs/ENTITY-FRAMEWORK-CORE-GUIDE.md` — how migrations work in this project
 

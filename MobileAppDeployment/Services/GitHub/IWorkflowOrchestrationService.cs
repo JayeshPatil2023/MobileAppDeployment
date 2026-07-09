@@ -2,18 +2,32 @@ namespace MobileAppDeployment.Services.GitHub;
 
 /// <summary>
 /// Orchestrates asset upload, workflow dispatch with retries, and live job progress.
-/// Shared by the production Create form and the Index R&amp;D trigger form.
 /// </summary>
 public interface IWorkflowOrchestrationService
 {
     /// <summary>
-    /// Starts a background workflow job and returns its id for progress polling.
+    /// Starts a background workflow job from uploaded form files and returns its id for progress polling.
     /// </summary>
     /// <remarks>
-    /// Asset files are copied into memory before the HTTP request ends so the
-    /// background worker can upload them safely.
+    /// Asset files are read on the request thread while <see cref="IFormFile"/> streams are still valid.
+    /// Only the GitHub API dispatch is retried in the background.
     /// </remarks>
     Task<string> StartWorkflowJobAsync(WorkflowDispatchRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Starts a background workflow job from a saved <see cref="Models.AppDeployment"/> record.
+    /// </summary>
+    /// <remarks>
+    /// Used when the user explicitly clicks <strong>Start App Deployment Process</strong> after saving.
+    /// Logo and splash are copied from the deployment's persisted asset paths into workflow-assets.
+    /// </remarks>
+    /// <param name="deployment">Saved deployment row including asset paths and workflow input fields.</param>
+    /// <param name="savedMessage">Optional banner shown on the workflow progress page.</param>
+    /// <param name="cancellationToken">Request cancellation token (asset copy only; dispatch continues in background).</param>
+    Task<string> StartWorkflowJobFromDeploymentAsync(
+        Models.AppDeployment deployment,
+        string? savedMessage = null,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets the current workflow job state for UI polling.

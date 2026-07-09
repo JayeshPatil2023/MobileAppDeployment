@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Options;
+using MobileAppDeployment.Models;
 
 namespace MobileAppDeployment.Services.GitHub;
 
@@ -96,6 +97,68 @@ public class WorkflowOrchestrationService : IWorkflowOrchestrationService
     }
 
     /// <inheritdoc />
+    public async Task<string> StartWorkflowJobFromDeploymentAsync(
+        AppDeployment deployment,
+        string? savedMessage = null,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateDeployment(deployment);
+
+        int maxAttempts = Math.Max(1, _options.MaxRetries);
+        string clientName = deployment.AppName.Trim();
+        string banner = savedMessage ?? "Starting app deployment process...";
+        WorkflowJobState job = _jobStore.Create(clientName, maxAttempts, banner);
+
+        try
+        {
+            _jobStore.UpdateProgress(
+                job.JobId,
+                20,
+                "Publishing saved logo and splash images for GitHub Actions download...",
+                WorkflowJobStatus.Running,
+                attempt: 1);
+
+            // Read from persisted deployment assets — not from the current form upload controls.
+            string logoUrl = await _assetStorage.PublishStoredFileAndGetPublicUrlAsync(
+                deployment.MobileAppIconPath!,
+                clientName,
+                "logo",
+                PngOnly);
+
+            string splashUrl = await _assetStorage.PublishStoredFileAndGetPublicUrlAsync(
+                deployment.LaunchImagePath!,
+                clientName,
+                "splash",
+                PngOnly);
+
+            _jobStore.UpdateProgress(
+                job.JobId,
+                50,
+                "Assets published. Queuing base workflow dispatch...",
+                WorkflowJobStatus.Running,
+                attempt: 1);
+
+            DispatchPayload payload = new(
+                job.JobId,
+                clientName,
+                logoUrl,
+                splashUrl,
+                deployment.IosBundleId.Trim(),
+                deployment.OneSignalAppId.Trim(),
+                deployment.OneSignalSenderId.Trim());
+
+            _ = Task.Run(() => ExecuteDispatchWithRetriesAsync(payload), CancellationToken.None);
+            return job.JobId;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to prepare workflow job for deployment {DeploymentId}", deployment.Id);
+            _jobStore.MarkFailed(job.JobId, ex.Message);
+            throw;
+        }
+    }
+
+    /// <inheritdoc />
     public WorkflowJobState? GetJob(string jobId) => _jobStore.Get(jobId);
 
     /// <summary>
@@ -182,6 +245,44 @@ public class WorkflowOrchestrationService : IWorkflowOrchestrationService
         jobStore.MarkFailed(
             payload.JobId,
             lastError ?? "Base workflow trigger failed after all retry attempts.");
+    }
+
+    /// <summary>
+    /// Validates a saved deployment has every field and asset path required to start the workflow.
+    /// </summary>
+    private static void ValidateDeployment(AppDeployment deployment)
+    {
+        if (string.IsNullOrWhiteSpace(deployment.AppName))
+        {
+            throw new InvalidOperationException("App name is required to start the deployment workflow.");
+        }
+
+        if (string.IsNullOrWhiteSpace(deployment.MobileAppIconPath))
+        {
+            throw new InvalidOperationException(
+                "Mobile app icon is required. Save the deployment with a logo before starting the workflow.");
+        }
+
+        if (string.IsNullOrWhiteSpace(deployment.LaunchImagePath))
+        {
+            throw new InvalidOperationException(
+                "Launch image is required. Save the deployment with a splash image before starting the workflow.");
+        }
+
+        if (string.IsNullOrWhiteSpace(deployment.IosBundleId))
+        {
+            throw new InvalidOperationException("iOS bundle ID is required to start the deployment workflow.");
+        }
+
+        if (string.IsNullOrWhiteSpace(deployment.OneSignalAppId))
+        {
+            throw new InvalidOperationException("OneSignal App ID is required to start the deployment workflow.");
+        }
+
+        if (string.IsNullOrWhiteSpace(deployment.OneSignalSenderId))
+        {
+            throw new InvalidOperationException("OneSignal Sender ID is required to start the deployment workflow.");
+        }
     }
 
     /// <summary>

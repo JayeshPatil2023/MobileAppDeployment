@@ -7,9 +7,12 @@ using MobileAppDeployment.Services.GitHub;
 namespace MobileAppDeployment.Controllers;
 
 /// <summary>
-/// MVC controller for app deployment CRUD and base workflow triggering.
+/// MVC controller for app deployment CRUD and explicit base workflow triggering.
 /// </summary>
 /// <remarks>
+/// <para><strong>Save vs start:</strong> Create and Edit only persist deployment data and assets.
+/// The GitHub Actions workflow starts only when the user clicks
+/// <strong>Start App Deployment Process</strong> on the Edit form.</para>
 /// <para>
 /// Public Create access is token-gated: clients open <c>/AppDeployment/Form/{token}</c>.
 /// Tokens are issued by admins via <c>POST /api/form-access-tokens</c>.
@@ -88,6 +91,7 @@ public class AppDeploymentController : Controller
 
             deployment.OneSignalRestApiKey = string.Empty;
             ViewBag.FormToken = access.Token;
+            ViewBag.DeploymentId = deployment.Id;
             return View("Edit", deployment);
         }
 
@@ -97,6 +101,7 @@ public class AppDeploymentController : Controller
             AppName = TruncateForAppName(access.ClientAppName)
         };
         ViewBag.FormToken = access.Token;
+        ViewBag.DeploymentId = null;
         return View("Create", model);
     }
 
@@ -109,10 +114,11 @@ public class AppDeploymentController : Controller
     }
 
     /// <summary>
-    /// Saves deployment details for a valid unused token, then triggers the base GitHub Actions workflow.
+    /// Saves deployment details for a valid unused token. Does not start the GitHub Actions workflow.
     /// </summary>
     /// <remarks>
-    /// Field mapping to workflow inputs:
+    /// After a successful save the client is redirected back to the same token URL, which now loads Edit.
+    /// Workflow field mapping (used later by <see cref="StartDeployment"/>):
     /// AppName → client_name,
     /// Mobile App Icon → logo,
     /// Launch Image → splash,
@@ -131,8 +137,7 @@ public class AppDeploymentController : Controller
         IFormFile? storeIconFile,
         IFormFile? featureGraphicFile,
         IFormFile? firebaseIosConfigFile,
-        IFormFile? firebaseAndroidConfigFile,
-        CancellationToken cancellationToken)
+        IFormFile? firebaseAndroidConfigFile)
     {
         FormAccessToken? access = await _formAccessTokenService.ResolveActiveAsync(token);
         if (access is null)
@@ -180,26 +185,65 @@ public class AppDeploymentController : Controller
             // Link token → deployment so later Form visits open Edit instead of Create.
             await _formAccessTokenService.MarkSubmittedAsync(access.Token, id);
 
-            // DB save first, then dispatch the base GitHub Actions workflow.
-            string jobId = await _workflowOrchestration.StartWorkflowJobAsync(
-                new WorkflowDispatchRequest
-                {
-                    ClientName = model.AppName,
-                    LogoFile = mobileAppIconFile!,
-                    SplashFile = launchImageFile!,
-                    AppBundleId = model.IosBundleId,
-                    AppId = model.OneSignalAppId,
-                    ProjectId = model.OneSignalSenderId,
-                    SavedMessage = "App deployment details saved successfully. Triggering base workflow..."
-                },
+            TempData["SuccessMessage"] = "Deployment saved successfully.";
+            return RedirectToAction(nameof(Form), new { token = access.Token });
+        }
+        catch (InvalidOperationException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            return View(model);
+        }
+    }
+
+    /// <summary>
+    /// Explicitly starts the base GitHub Actions workflow for a saved deployment.
+    /// </summary>
+    /// <remarks>
+    /// Uses the <strong>persisted</strong> deployment row (not unsaved form fields).
+    /// Logo and splash are published from stored asset paths under <c>wwwroot/uploads/{id}/</c>.
+    /// </remarks>
+    /// <param name="id">Deployment primary key.</param>
+    /// <param name="token">Optional form-access token; when present must own this deployment.</param>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> StartDeployment(int id, string? token, CancellationToken cancellationToken)
+    {
+        bool isTokenStart = !string.IsNullOrWhiteSpace(token);
+        if (isTokenStart)
+        {
+            FormAccessToken? access = await _formAccessTokenService.ResolveActiveAsync(token!);
+            if (access is null || access.AppDeploymentId != id)
+            {
+                return View("InvalidToken");
+            }
+        }
+
+        AppDeployment? deployment = await _service.GetByIdAsync(id);
+        if (deployment is null)
+        {
+            return NotFound();
+        }
+
+        try
+        {
+            string jobId = await _workflowOrchestration.StartWorkflowJobFromDeploymentAsync(
+                deployment,
+                savedMessage: "App deployment process started. Triggering base workflow...",
                 cancellationToken);
 
             return RedirectToAction(nameof(WorkflowProgress), new { jobId });
         }
         catch (InvalidOperationException ex)
         {
-            ModelState.AddModelError(string.Empty, ex.Message);
-            return View(model);
+            _logger.LogWarning(ex, "Could not start deployment workflow for {DeploymentId}", id);
+            TempData["WarningMessage"] = ex.Message;
+
+            if (isTokenStart)
+            {
+                return RedirectToAction(nameof(Form), new { token });
+            }
+
+            return RedirectToAction(nameof(Edit), new { id });
         }
     }
 
@@ -286,11 +330,12 @@ public class AppDeploymentController : Controller
         }
 
         deployment.OneSignalRestApiKey = string.Empty;
+        ViewBag.DeploymentId = deployment.Id;
         return View(deployment);
     }
 
     /// <summary>
-    /// Updates an existing deployment (does not re-trigger the base workflow).
+    /// Updates an existing deployment. Does not start or re-trigger the base workflow.
     /// </summary>
     /// <remarks>
     /// When <paramref name="token"/> is present, the token must own <paramref name="id"/>.
@@ -342,6 +387,7 @@ public class AppDeploymentController : Controller
 
         if (!ModelState.IsValid)
         {
+            ViewBag.DeploymentId = model.Id;
             return View(model);
         }
 
@@ -357,18 +403,19 @@ public class AppDeploymentController : Controller
         catch (InvalidOperationException ex)
         {
             ModelState.AddModelError(string.Empty, ex.Message);
+            ViewBag.DeploymentId = model.Id;
             return View(model);
         }
 
-        TempData["SuccessMessage"] = "App deployment details updated successfully.";
+        TempData["SuccessMessage"] = "Deployment saved successfully.";
 
-        // Client stays on the tokenized form link; admin returns to the list.
+        // Client stays on the tokenized form link; admin stays on the edit form.
         if (isTokenEdit)
         {
             return RedirectToAction(nameof(Form), new { token });
         }
 
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Edit), new { id });
     }
 
     /// <summary>

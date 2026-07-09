@@ -6,13 +6,10 @@
 > `/AppDeployment/Form/{token}` issued by `POST /api/form-access-tokens`.
 > See [`docs/TOKEN-BASED-FORM-ACCESS.md`](TOKEN-BASED-FORM-ACCESS.md).
 
-After a successful **New App Deployment** (Create) form submit:
+**Saving** and **starting** the deployment workflow are separate steps:
 
-1. Form inputs are validated (and the form-access token is verified)
-2. Deployment data is saved to PostgreSQL and the access token is linked to that deployment
-3. Mobile App Icon / Launch Image are also published under `wwwroot/uploads/workflow-assets/` for GitHub Actions to download
-4. The app dispatches the **base workflow** in `systenics/SA_BaseMVCProject` via GitHub `workflow_dispatch`
-5. The UI shows **live progress** (with retries) while the dispatch API call is in flight
+1. **Save deployment** (Create or Edit) — validates the form, saves PostgreSQL data and assets under `wwwroot/uploads/{id}/`, links the form-access token on first save. **Does not** start GitHub Actions.
+2. **Start App Deployment Process** (Edit only, after first save) — publishes logo/splash to `wwwroot/uploads/workflow-assets/`, dispatches the base workflow in `systenics/SA_BaseMVCProject`, and shows live progress with retries.
 
 Repo creation, local PowerShell merge, and the in-app merge progress path have been **removed** from the production Create flow.  
 Those operations now run inside GitHub Actions (see scripts under `MobileAppDeployment/Scripts/` and the workflow YAML in `SA_BaseMVCProject`).
@@ -22,19 +19,37 @@ Those operations now run inside GitHub Actions (see scripts under `MobileAppDepl
 ## End-to-end sequence
 
 ```
-User submits Create form
+User fills deployment form (Create via token URL)
         │
         ▼
-Validate ModelState + required files
+User clicks Save deployment
+        │
+        ▼
+Validate ModelState + required files + form-access token
         │
         ▼
 Save AppDeployment to DB + store form assets under /uploads/{id}/
         │
         ▼
-IWorkflowOrchestrationService.StartWorkflowJobAsync
-  • save logo/splash public URLs (wwwroot/uploads/workflow-assets/{client}/)
-  • queue job in IWorkflowJobStore
-  • background: workflow_dispatch with retries
+Link form-access token → deployment (first save only)
+        │
+        ▼
+Redirect → same token URL (now Edit) + success banner
+        │
+        ▼
+User reviews / edits fields, clicks Save deployment as needed (no workflow)
+        │
+        ▼
+User clicks Start App Deployment Process
+        │
+        ▼
+POST /AppDeployment/StartDeployment/{id}
+  • load saved deployment from DB (not unsaved form fields)
+  • IWorkflowOrchestrationService.StartWorkflowJobFromDeploymentAsync
+      - copy logo/splash → wwwroot/uploads/workflow-assets/{client}/
+      - build public URLs (PublicBaseUrl / ngrok)
+      - queue job in IWorkflowJobStore
+      - background: workflow_dispatch with retries
         │
         ▼
 Redirect → WorkflowProgress?jobId=...
@@ -50,13 +65,13 @@ Meanwhile, `SA_BaseMVCProject` runs `create_client_repo.ps1`, asset update, buil
 
 ---
 
-## Field mapping (Create → workflow inputs)
+## Field mapping (saved deployment → workflow inputs)
 
-| Create form field | Workflow input |
-|-------------------|----------------|
+| Deployment field | Workflow input |
+|------------------|----------------|
 | App Name (`AppName`) | `client_name` |
-| Mobile App Icon | `logo_blob_url` (via public URL) |
-| Launch Image | `splash_blob_url` (via public URL) |
+| Mobile App Icon path (`MobileAppIconPath`) | `logo_blob_url` (via public URL) |
+| Launch Image path (`LaunchImagePath`) | `splash_blob_url` (via public URL) |
 | Bundle ID iOS (`IosBundleId`) | `app_bundle_id` |
 | OneSignal App ID (`OneSignalAppId`) | `app_id` |
 | OneSignal Sender ID (`OneSignalSenderId`) | `project_id` |
@@ -69,9 +84,10 @@ Other workflow inputs (`client_branch`, `source_name`, `source_branch`) come fro
 
 | Component | Role |
 |-----------|------|
-| `IWorkflowOrchestrationService` / `WorkflowOrchestrationService` | Shared entry: validate, store assets, start job, retry dispatch |
+| `AppDeploymentController` | Save-only Create/Edit; explicit `StartDeployment` action |
+| `IWorkflowOrchestrationService` / `WorkflowOrchestrationService` | `StartWorkflowJobFromDeploymentAsync` — publish assets, start job, retry dispatch |
 | `IGitHubWorkflowDispatchService` / `GitHubWorkflowDispatchService` | HTTP `POST .../actions/workflows/{file}/dispatches` |
-| `IWorkflowAssetStorageService` | Save PNGs under `wwwroot/uploads/workflow-assets/` and build absolute URLs |
+| `IWorkflowAssetStorageService` | `PublishStoredFileAndGetPublicUrlAsync` copies saved assets into `workflow-assets/` and builds absolute URLs |
 | `IWorkflowJobStore` / `WorkflowJobStore` | In-memory job state for progress UI |
 | `WorkflowProgress` + `WorkflowStatus` | Live UI + JSON poll endpoint |
 
@@ -84,7 +100,7 @@ Configured under `GitHub:WorkflowDispatch`:
 | `MaxRetries` | `3` | Total dispatch attempts |
 | `RetryDelaySeconds` | `5` | Wait between failed attempts |
 
-Only the **GitHub API dispatch** is retried. Asset upload runs once on the request thread (while `IFormFile` streams are valid).
+Only the **GitHub API dispatch** is retried. Asset publish runs once on the request thread when the user clicks **Start App Deployment Process**.
 
 ---
 
@@ -130,6 +146,7 @@ Do **not** set `"PublicBaseUrl": ""` in `appsettings.Development.json` — that 
 1. Valid GitHub PAT available to the web app process
 2. Publicly reachable `PublicBaseUrl` when testing workflow asset downloads
 3. Base workflow file in `SA_BaseMVCProject` with matching `workflow_dispatch` inputs
+4. Deployment saved with logo, splash, bundle ID, and OneSignal IDs before clicking **Start App Deployment Process**
 
 ---
 
@@ -201,6 +218,7 @@ See earlier sections in this file / workflow YAML for exact step snippets.
 | Workflow dispatch disabled / token missing | Set `GitHub:PersonalAccessToken` or `GITHUB_TOKEN` |
 | Dispatch HTTP 404 | Wrong `Owner`/`Repository`/`Workflow`/`Ref` |
 | Assets not downloaded by Actions | `PublicBaseUrl` not public (localhost) |
+| Start button error: asset not found | Save deployment again so logo/splash exist under `/uploads/{id}/` |
 | UI stays queued | App recycled — in-memory `WorkflowJobStore` lost |
 | `gh workflow run` not found on default branch | Put `Base-client-deployment.yml` on client default branch (handled by `create_client_repo.ps1`) |
 

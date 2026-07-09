@@ -57,6 +57,60 @@ public class WorkflowAssetStorageService : IWorkflowAssetStorageService
         return $"{ResolvePublicBaseUrl()}{relativePath}";
     }
 
+    /// <inheritdoc />
+    public async Task<string> PublishStoredFileAndGetPublicUrlAsync(
+        string relativeWebPath,
+        string clientName,
+        string assetKey,
+        IEnumerable<string> allowedExtensions)
+    {
+        if (string.IsNullOrWhiteSpace(relativeWebPath))
+        {
+            throw new InvalidOperationException($"{assetKey} file is required.");
+        }
+
+        string normalizedRelative = relativeWebPath.Trim().Replace('\\', '/');
+        if (!normalizedRelative.StartsWith('/'))
+        {
+            normalizedRelative = "/" + normalizedRelative;
+        }
+
+        string extension = Path.GetExtension(normalizedRelative).ToLowerInvariant();
+        HashSet<string> allowed = allowedExtensions.Select(x => x.ToLowerInvariant()).ToHashSet();
+        if (!allowed.Contains(extension))
+        {
+            throw new InvalidOperationException(
+                $"Invalid file type for {assetKey}. Allowed: {string.Join(", ", allowed)}.");
+        }
+
+        string sourcePhysicalPath = Path.Combine(
+            _environment.WebRootPath,
+            normalizedRelative.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+
+        if (!File.Exists(sourcePhysicalPath))
+        {
+            throw new InvalidOperationException(
+                $"Stored {assetKey} file was not found on disk. Save the deployment again before starting the workflow.");
+        }
+
+        string safeClientName = SanitizeFolderName(clientName);
+        string uploadDirectory = Path.Combine(_environment.WebRootPath, "uploads", "workflow-assets", safeClientName);
+        Directory.CreateDirectory(uploadDirectory);
+
+        string fileName = $"{assetKey}{extension}";
+        string destinationPhysicalPath = Path.Combine(uploadDirectory, fileName);
+
+        // Copy the persisted deployment asset into the public workflow-assets folder for GitHub runners.
+        await using (FileStream source = new(sourcePhysicalPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+        await using (FileStream destination = new(destinationPhysicalPath, FileMode.Create))
+        {
+            await source.CopyToAsync(destination);
+        }
+
+        string workflowRelativePath = $"/uploads/workflow-assets/{safeClientName}/{fileName}";
+        return $"{ResolvePublicBaseUrl()}{workflowRelativePath}";
+    }
+
     /// <summary>
     /// Uses configured <see cref="GitHubWorkflowDispatchOptions.PublicBaseUrl"/> when set.
     /// Does not fall back to localhost/request host for GitHub Actions downloads — runners cannot reach it.
