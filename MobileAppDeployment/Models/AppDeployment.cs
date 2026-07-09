@@ -152,6 +152,9 @@ public class AppDeployment
     [Url(ErrorMessage = "Enter a valid URL.")]
     public string? GooglePlayListingUrl { get; set; }
 
+    [StringLength(500)]
+    public string? PlayStoreKeyPath { get; set; }
+
     [Required(ErrorMessage = "iOS Bundle ID is required.")]
     [Display(Name = "iOS Bundle ID")]
     [StringLength(255)]
@@ -161,6 +164,19 @@ public class AppDeployment
     [Display(Name = "Apple Team ID")]
     [StringLength(10, MinimumLength = 10, ErrorMessage = "Apple Team ID must be 10 characters.")]
     public string AppleTeamId { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Apple Issuer ID is required.")]
+    [Display(Name = "Apple Issuer ID")]
+    [StringLength(100)]
+    public string AppleIssuerId { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Apple Key ID is required.")]
+    [Display(Name = "Apple Key ID")]
+    [StringLength(100)]
+    public string AppleKeyId { get; set; } = string.Empty;
+
+    [StringLength(500)]
+    public string? AppleAuthKeyPath { get; set; }
 
     // Website configuration
     [Required(ErrorMessage = "Domain URL is required.")]

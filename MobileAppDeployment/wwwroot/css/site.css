@@ -704,9 +704,19 @@ input[type="file"].file-hidden { display: none; }
   background: var(--success-light);
   border-style: solid;
 }
+.upload-zone.upload-zone--invalid {
+  border-color: var(--danger) !important;
+  background: #FEF2F2;
+  border-style: solid;
+}
+.upload-zone.upload-zone--invalid:hover {
+  border-color: var(--danger) !important;
+  background: #FEE2E2;
+}
 .upload-zone svg { width: 22px; height: 22px; stroke: var(--text-muted); fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
 .upload-zone:hover svg { stroke: var(--accent); }
 .upload-zone.has-file svg { stroke: var(--success); }
+.upload-zone.upload-zone--invalid svg { stroke: var(--danger); }
 .upload-label { font-size: 12px; color: var(--text-secondary); }
 .upload-spec { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
 .upload-filename {

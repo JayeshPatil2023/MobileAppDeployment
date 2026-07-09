@@ -50,6 +50,18 @@
       const input = document.getElementById(inputId);
       if (!input) return;
 
+      const validationMessage = document.querySelector(`[data-valmsg-for="${inputId}"]`);
+
+      function setUploadValidationError(message) {
+        if (validationMessage) {
+          validationMessage.textContent = message || '';
+          validationMessage.classList.toggle('field-validation-error', !!message);
+          validationMessage.classList.toggle('field-validation-valid', !message);
+        }
+
+        zone.classList.toggle('upload-zone--invalid', !!message);
+      }
+
       zone.addEventListener('click', () => input.click());
 
       input.addEventListener('change', () => {
@@ -61,10 +73,14 @@
         if (!file) {
           zone.classList.remove('has-file');
           if (filenameEl) filenameEl.textContent = '';
+          if (input.required && input.dataset.hasExisting !== 'true') {
+            setUploadValidationError('This field is required.');
+          }
           return;
         }
 
         zone.classList.add('has-file');
+        setUploadValidationError('');
         if (filenameEl) filenameEl.textContent = file.name;
 
         const statusEl = zone.querySelector('.upload-status');
@@ -83,6 +99,26 @@
           reader.readAsDataURL(file);
         }
       });
+
+      // Required file inputs are hidden, so the browser/jQuery validator does not show messages automatically.
+      // Validate them explicitly on submit and paint the upload card red like text inputs.
+      const form = input.closest('form');
+      if (form) {
+        form.addEventListener('submit', (event) => {
+          if (!input.required || input.dataset.hasExisting === 'true') {
+            setUploadValidationError('');
+            return;
+          }
+
+          const hasFile = input.files && input.files.length > 0;
+          if (!hasFile) {
+            event.preventDefault();
+            setUploadValidationError('This field is required.');
+          } else {
+            setUploadValidationError('');
+          }
+        });
+      }
     });
   }
 

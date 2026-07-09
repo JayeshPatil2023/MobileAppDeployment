@@ -28,6 +28,7 @@ public class AppDeploymentController : Controller
     private static readonly string[] PngOrJpeg = [".png", ".jpg", ".jpeg"];
     private static readonly string[] PlistOnly = [".plist"];
     private static readonly string[] JsonOnly = [".json"];
+    private static readonly string[] P8Only = [".p8"];
 
     private readonly IAppDeploymentService _service;
     private readonly IAssetStorageService _assetStorage;
@@ -137,7 +138,9 @@ public class AppDeploymentController : Controller
         IFormFile? storeIconFile,
         IFormFile? featureGraphicFile,
         IFormFile? firebaseIosConfigFile,
-        IFormFile? firebaseAndroidConfigFile)
+        IFormFile? firebaseAndroidConfigFile,
+        IFormFile? playStoreKeyFile,
+        IFormFile? appleAuthKeyFile)
     {
         FormAccessToken? access = await _formAccessTokenService.ResolveActiveAsync(token);
         if (access is null)
@@ -161,7 +164,9 @@ public class AppDeploymentController : Controller
             storeIconFile,
             featureGraphicFile,
             firebaseIosConfigFile,
-            firebaseAndroidConfigFile);
+            firebaseAndroidConfigFile,
+            playStoreKeyFile,
+            appleAuthKeyFile);
 
         if (!ModelState.IsValid)
         {
@@ -179,7 +184,9 @@ public class AppDeploymentController : Controller
                 storeIconFile,
                 featureGraphicFile,
                 firebaseIosConfigFile,
-                firebaseAndroidConfigFile);
+                firebaseAndroidConfigFile,
+                playStoreKeyFile,
+                appleAuthKeyFile);
             await _service.UpdateAsync(model);
 
             // Link token → deployment so later Form visits open Edit instead of Create.
@@ -353,7 +360,9 @@ public class AppDeploymentController : Controller
         IFormFile? storeIconFile,
         IFormFile? featureGraphicFile,
         IFormFile? firebaseIosConfigFile,
-        IFormFile? firebaseAndroidConfigFile)
+        IFormFile? firebaseAndroidConfigFile,
+        IFormFile? playStoreKeyFile,
+        IFormFile? appleAuthKeyFile)
     {
         if (id != model.Id)
         {
@@ -393,7 +402,17 @@ public class AppDeploymentController : Controller
 
         try
         {
-            await SaveUploadedFilesAsync(id, model, mobileAppIconFile, launchImageFile, storeIconFile, featureGraphicFile, firebaseIosConfigFile, firebaseAndroidConfigFile);
+            await SaveUploadedFilesAsync(
+                id,
+                model,
+                mobileAppIconFile,
+                launchImageFile,
+                storeIconFile,
+                featureGraphicFile,
+                firebaseIosConfigFile,
+                firebaseAndroidConfigFile,
+                playStoreKeyFile,
+                appleAuthKeyFile);
             bool updated = await _service.UpdateAsync(model);
             if (!updated)
             {
@@ -472,7 +491,9 @@ public class AppDeploymentController : Controller
         IFormFile? storeIconFile,
         IFormFile? featureGraphicFile,
         IFormFile? firebaseIosConfigFile,
-        IFormFile? firebaseAndroidConfigFile)
+        IFormFile? firebaseAndroidConfigFile,
+        IFormFile? playStoreKeyFile,
+        IFormFile? appleAuthKeyFile)
     {
         if (isEdit)
         {
@@ -508,6 +529,16 @@ public class AppDeploymentController : Controller
         {
             modelState.AddModelError("firebaseAndroidConfigFile", "google-services.json is required.");
         }
+
+        if (playStoreKeyFile is null || playStoreKeyFile.Length == 0)
+        {
+            modelState.AddModelError("playStoreKeyFile", "Play Store key JSON file is required.");
+        }
+
+        if (appleAuthKeyFile is null || appleAuthKeyFile.Length == 0)
+        {
+            modelState.AddModelError("appleAuthKeyFile", "Apple auth key (.p8) file is required.");
+        }
     }
 
     /// <summary>
@@ -521,6 +552,8 @@ public class AppDeploymentController : Controller
         model.FeatureGraphicPath ??= existing.FeatureGraphicPath;
         model.FirebaseIosConfigPath ??= existing.FirebaseIosConfigPath;
         model.FirebaseAndroidConfigPath ??= existing.FirebaseAndroidConfigPath;
+        model.PlayStoreKeyPath ??= existing.PlayStoreKeyPath;
+        model.AppleAuthKeyPath ??= existing.AppleAuthKeyPath;
 
         if (string.IsNullOrWhiteSpace(model.OneSignalRestApiKey))
         {
@@ -539,7 +572,9 @@ public class AppDeploymentController : Controller
         IFormFile? storeIconFile,
         IFormFile? featureGraphicFile,
         IFormFile? firebaseIosConfigFile,
-        IFormFile? firebaseAndroidConfigFile)
+        IFormFile? firebaseAndroidConfigFile,
+        IFormFile? playStoreKeyFile,
+        IFormFile? appleAuthKeyFile)
     {
         if (mobileAppIconFile is { Length: > 0 })
         {
@@ -569,6 +604,16 @@ public class AppDeploymentController : Controller
         if (firebaseAndroidConfigFile is { Length: > 0 })
         {
             model.FirebaseAndroidConfigPath = await _assetStorage.SaveAssetAsync(deploymentId, firebaseAndroidConfigFile, "google-services", JsonOnly);
+        }
+
+        if (playStoreKeyFile is { Length: > 0 })
+        {
+            model.PlayStoreKeyPath = await _assetStorage.SaveAssetAsync(deploymentId, playStoreKeyFile, "play-store-key", JsonOnly);
+        }
+
+        if (appleAuthKeyFile is { Length: > 0 })
+        {
+            model.AppleAuthKeyPath = await _assetStorage.SaveAssetAsync(deploymentId, appleAuthKeyFile, "AuthKey", P8Only);
         }
     }
 }

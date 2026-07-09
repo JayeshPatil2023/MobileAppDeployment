@@ -1,4 +1,7 @@
 @model MobileAppDeployment.Models.AppDeployment
+@{
+    var isEdit = Model.Id > 0;
+}
 
 <div class="section" id="sec-mobile-config">
     <div class="section-header">
@@ -46,6 +49,24 @@
                     <span class="field-hint">Leave blank if not yet published — the build pipeline will create a new listing.</span>
                 </div>
             </div>
+            <div class="config-upload-item spacer">
+                <div class="upload-zone config-upload-zone @(string.IsNullOrEmpty(Model.PlayStoreKeyPath) ? "" : "has-file")"
+                     data-upload-zone="playStoreKeyFile" data-upload-type="config">
+                    <svg viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                    <div class="field-label-wrap field-label-wrap--upload">
+                        <span class="upload-label">Play Store Key (JSON) <span class="required">*</span></span>
+                        <field-help key="PlayStoreKeyFile" />
+                    </div>
+                    <span class="upload-spec">Upload Google Play service-account key JSON</span>
+                    <span class="upload-filename"></span>
+                    <span class="upload-status @(string.IsNullOrEmpty(Model.PlayStoreKeyPath) ? "upload-status--pending" : "upload-status--ok")">
+                        @(string.IsNullOrEmpty(Model.PlayStoreKeyPath) ? "Awaiting upload" : "File detected")
+                    </span>
+                </div>
+                <input type="file" id="playStoreKeyFile" name="playStoreKeyFile" class="file-hidden"
+                       accept=".json,application/json" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.PlayStoreKeyPath) ? "true" : "false")" @(!isEdit ? "required" : null) />
+                <span class="field-error field-validation-valid" data-valmsg-for="playStoreKeyFile" data-valmsg-replace="true"></span>
+            </div>
         </div>
 
         <div class="subsection">
@@ -86,6 +107,42 @@
                     <span asp-validation-for="AppleTeamId" class="field-error"></span>
                     <span class="field-hint">10-character alphanumeric ID from your Apple Developer membership page.</span>
                 </div>
+            </div>
+            <div class="grid-2 spacer">
+                <div class="field">
+                    <div class="field-label-wrap">
+                        <label asp-for="AppleIssuerId" class="field-label">Issuer ID <span class="required">*</span></label>
+                        <field-help key="AppleIssuerId" />
+                    </div>
+                    <input asp-for="AppleIssuerId" class="form-input mono-input" placeholder="Issuer ID from App Store Connect API key" />
+                    <span asp-validation-for="AppleIssuerId" class="field-error"></span>
+                </div>
+                <div class="field">
+                    <div class="field-label-wrap">
+                        <label asp-for="AppleKeyId" class="field-label">Key ID <span class="required">*</span></label>
+                        <field-help key="AppleKeyId" />
+                    </div>
+                    <input asp-for="AppleKeyId" class="form-input mono-input" placeholder="10-character key ID" />
+                    <span asp-validation-for="AppleKeyId" class="field-error"></span>
+                </div>
+            </div>
+            <div class="config-upload-item spacer">
+                <div class="upload-zone config-upload-zone @(string.IsNullOrEmpty(Model.AppleAuthKeyPath) ? "" : "has-file")"
+                     data-upload-zone="appleAuthKeyFile" data-upload-type="config">
+                    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    <div class="field-label-wrap field-label-wrap--upload">
+                        <span class="upload-label">Auth Key (.p8) <span class="required">*</span></span>
+                        <field-help key="AppleAuthKeyFile" />
+                    </div>
+                    <span class="upload-spec">Upload App Store Connect API auth key (.p8)</span>
+                    <span class="upload-filename"></span>
+                    <span class="upload-status @(string.IsNullOrEmpty(Model.AppleAuthKeyPath) ? "upload-status--pending" : "upload-status--ok")">
+                        @(string.IsNullOrEmpty(Model.AppleAuthKeyPath) ? "Awaiting upload" : "File detected")
+                    </span>
+                </div>
+                <input type="file" id="appleAuthKeyFile" name="appleAuthKeyFile" class="file-hidden"
+                       accept=".p8,application/octet-stream,text/plain" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.AppleAuthKeyPath) ? "true" : "false")" @(!isEdit ? "required" : null) />
+                <span class="field-error field-validation-valid" data-valmsg-for="appleAuthKeyFile" data-valmsg-replace="true"></span>
             </div>
         </div>
 

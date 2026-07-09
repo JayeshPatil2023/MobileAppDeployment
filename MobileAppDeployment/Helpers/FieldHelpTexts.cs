@@ -42,12 +42,24 @@ public static class FieldHelpTexts
         ["GooglePlayListingUrl"] = new(
             "Google Play listing URL",
             "The full URL of your existing Google Play store listing, if the app is already published. If you are submitting a new app, leave this blank and the deployment pipeline will create a new listing using the package name you provide."),
+        ["PlayStoreKeyFile"] = new(
+            "Play Store key (JSON)",
+            "Upload the Google Play service-account JSON key used by automation to call Google Play Developer APIs. Generate it from Google Cloud IAM, grant required Play Console permissions, and keep it private."),
         ["IosBundleId"] = new(
             "Bundle ID",
             "The unique identifier for your iOS app registered in Apple Developer and App Store Connect. It must exactly match the bundle identifier in your Xcode project and provisioning profiles. Bundle IDs use reverse-DNS notation, such as com.company.app."),
         ["AppleTeamId"] = new(
             "Apple Team ID",
             "Your 10-character Apple Developer Program Team ID, found on the Membership Details page in your Apple Developer account. This is required to sign iOS builds and associate them with the correct developer team."),
+        ["AppleIssuerId"] = new(
+            "Apple Issuer ID",
+            "Issuer ID from App Store Connect API Keys. This identifies your App Store Connect API provider account when using key-based authentication."),
+        ["AppleKeyId"] = new(
+            "Apple Key ID",
+            "Key ID of the App Store Connect API key. This ID is paired with Issuer ID and the .p8 private key during iOS automation."),
+        ["AppleAuthKeyFile"] = new(
+            "Apple Auth Key (.p8)",
+            "Upload the App Store Connect API private key file (.p8) downloaded once from Apple. Keep this file secure and rotate it if exposed."),
         ["DomainUrl"] = new(
             "Domain",
             "The production URL where your web application will be hosted, including https://. Before deployment, point your domain's DNS A record to the deployment server. A free SSL certificate will be provisioned automatically via Let's Encrypt once DNS propagation completes."),

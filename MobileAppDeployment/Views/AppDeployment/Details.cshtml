@@ -67,8 +67,12 @@
         <div class="detail-grid">
             <div class="detail-item"><div class="detail-label">Package name</div><div class="detail-value">@Model.AndroidPackageName</div></div>
             <div class="detail-item"><div class="detail-label">Google Play listing URL</div><div class="detail-value">@(string.IsNullOrEmpty(Model.GooglePlayListingUrl) ? "—" : Model.GooglePlayListingUrl)</div></div>
+            <div class="detail-item"><div class="detail-label">Play Store key JSON</div><div class="detail-value">@(string.IsNullOrEmpty(Model.PlayStoreKeyPath) ? "Not uploaded" : "Uploaded")</div></div>
             <div class="detail-item"><div class="detail-label">iOS Bundle ID</div><div class="detail-value">@Model.IosBundleId</div></div>
             <div class="detail-item"><div class="detail-label">Apple Team ID</div><div class="detail-value">@Model.AppleTeamId</div></div>
+            <div class="detail-item"><div class="detail-label">Apple Issuer ID</div><div class="detail-value">@Model.AppleIssuerId</div></div>
+            <div class="detail-item"><div class="detail-label">Apple Key ID</div><div class="detail-value">@Model.AppleKeyId</div></div>
+            <div class="detail-item"><div class="detail-label">Apple Auth Key (.p8)</div><div class="detail-value">@(string.IsNullOrEmpty(Model.AppleAuthKeyPath) ? "Not uploaded" : "Uploaded")</div></div>
         </div>
     </div>
 </div>
