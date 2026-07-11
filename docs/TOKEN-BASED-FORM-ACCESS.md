@@ -39,7 +39,7 @@ Tokenized links solve that for clients without building a full identity system y
 Admin (Postman)
   POST /api/form-access-tokens
   Header: X-Api-Key: <FormAccess:ApiKey>
-  Body: { clientName, clientAppName }
+  Body: { clientName, clientAppName, email? }
         │
         ▼
 FormAccessTokensController
@@ -50,11 +50,17 @@ FormAccessTokensController
         └── else → generate cryptic Base64Url token, save FormAccessTokens row
         │
         ▼
-Response includes:
-  token, formUrl, alreadyExisted, isSubmitted
+Optional email (only when `email` is provided):
+  FormAccessEmailComposer → EmailService (Mailgun SMTP)
+  • success → response.emailSent = true
+  • failure → response.emailSent = false + emailError (token still returned)
         │
         ▼
-Admin shares formUrl with client
+Response includes:
+  token, formUrl, alreadyExisted, isSubmitted, emailSent, emailRecipient, emailError
+        │
+        ▼
+Admin shares formUrl with client (or client uses the emailed link)
   e.g. https://host/AppDeployment/Form/{token}
         │
         ▼
@@ -115,16 +121,19 @@ If `FormAccess:ApiKey` is empty in config, the API **fails closed** (always 401)
 ```json
 {
   "clientName": "Acme Corp",
-  "clientAppName": "Acme Auction"
+  "clientAppName": "Acme Auction",
+  "email": "client@acme.example"
 }
 ```
 
+`email` is **optional**. Omit it (or send `null` / `""`) to issue a token without sending mail.
 
-| Field           | Rules                                                         |
-| --------------- | ------------------------------------------------------------- |
-| `clientName`    | Required, max 255 chars — organization / client label         |
-| `clientAppName` | Required, max 255 chars — used to prefill `AppName` on Create |
 
+| Field           | Rules                                                                 |
+| --------------- | --------------------------------------------------------------------- |
+| `clientName`    | Required, max 255 chars — organization / client label                 |
+| `clientAppName` | Required, max 255 chars — used to prefill `AppName` on Create         |
+| `email`         | Optional. When present must be a valid email; triggers form-link mail |
 
 
 
@@ -137,7 +146,10 @@ If `FormAccess:ApiKey` is empty in config, the API **fails closed** (always 401)
   "clientAppName": "Acme Auction",
   "formUrl": "https://localhost:7xxx/AppDeployment/Form/xY7_opaqueBase64UrlToken...",
   "alreadyExisted": false,
-  "isSubmitted": false
+  "isSubmitted": false,
+  "emailSent": true,
+  "emailRecipient": "client@acme.example",
+  "emailError": null
 }
 ```
 
@@ -148,6 +160,12 @@ If `FormAccess:ApiKey` is empty in config, the API **fails closed** (always 401)
 | `formUrl`        | Absolute link to share with the client                         |
 | `alreadyExisted` | `true` if this client/app already had an active token (reused) |
 | `isSubmitted`    | `true` if that token already created a deployment (edit mode)  |
+| `emailSent`      | `true` only when email was requested **and** SMTP send succeeded |
+| `emailRecipient` | Address used for the optional send; `null` when email omitted  |
+| `emailError`     | Safe error text when email was requested but sending failed    |
+
+
+**Important:** token issuance always succeeds on its own. If `email` was provided and SMTP fails, the API still returns **200** with `formUrl` so the admin can share the link manually (`emailSent: false`).
 
 
 
@@ -176,11 +194,58 @@ That prevents parallel magic links for one client/app pair.
 ```json
 {
   "clientName": "Acme Corp",
-  "clientAppName": "Acme Auction"
+  "clientAppName": "Acme Auction",
+  "email": "client@acme.example"
 }
 ```
 
-1. Copy `formUrl` from the response and send it to the client.
+1. Copy `formUrl` from the response (and/or confirm `emailSent: true` if you included `email`).
+
+---
+
+
+
+## Optional email delivery (Mailgun SMTP)
+
+When `email` is present on the issue request:
+
+1. Token is issued (or reused) as usual
+2. `FormAccessEmailComposer` builds an HTML + plain-text message containing `formUrl`
+3. `EmailService` sends via Mailgun SMTP settings under `MailgunSMTP`
+
+When `email` is omitted, **no email code path runs**.
+
+### Configuration
+
+```json
+"MailgunSMTP": {
+  "SMTPServer": "smtp.mailgun.org",
+  "SMTPPort": 587,
+  "SMTPUsername": "<mailgun-smtp-login>",
+  "SMTPPassword": "<mailgun-smtp-password>",
+  "FromEmail": "noreply@your-verified-domain",
+  "FromDisplayName": "Systenics App Deployment"
+}
+```
+
+| Key | Purpose |
+|-----|---------|
+| `SMTPServer` | Mailgun SMTP host |
+| `SMTPPort` | Usually `587` (STARTTLS) |
+| `SMTPUsername` / `SMTPPassword` | Mailgun SMTP credentials |
+| `FromEmail` | Authorized sender address |
+| `FromDisplayName` | Optional From display name |
+
+Prefer User Secrets / environment variables for `SMTPPassword` in non-local environments.
+
+### Code map (email)
+
+| Piece | Path | Role |
+|-------|------|------|
+| Options | `Options/MailgunSmtpOptions.cs` | SMTP config binding |
+| Email transport | `Services/EmailService.cs` | SmtpClient send via Mailgun |
+| Form-link composer | `Services/FormAccessEmailComposer.cs` | Subject + HTML/text body |
+| Controller hook | `Controllers/FormAccessTokensController.cs` | Calls send only when email provided |
 
 ---
 
@@ -294,10 +359,12 @@ dotnet ef database update
 | Piece      | Path                                                                          | Role                                        |
 | ---------- | ----------------------------------------------------------------------------- | ------------------------------------------- |
 | Options    | `Options/FormAccessOptions.cs`                                                | Config binding                              |
+| SMTP opts  | `Options/MailgunSmtpOptions.cs`                                               | Mailgun SMTP binding                        |
 | Entity     | `Models/FormAccessToken.cs`                                                   | DB row                                      |
 | API DTOs   | `Models/CreateFormAccessTokenRequest.cs`, `Models/FormAccessTokenResponse.cs` | Request/response                            |
 | Repository | `Repositories/FormAccessTokenRepository.cs`                                   | EF queries                                  |
 | Service    | `Services/FormAccessTokenService.cs`                                          | Issue / resolve / mark submitted; token RNG |
+| Email      | `Services/EmailService.cs`, `Services/FormAccessEmailComposer.cs`             | Optional form-link email via Mailgun        |
 | Admin API  | `Controllers/FormAccessTokensController.cs`                                   | `POST /api/form-access-tokens`              |
 | Form MVC   | `Controllers/AppDeploymentController.cs`                                      | `Form`, gated `Create`/`Edit`/`StartDeployment` |
 | Views      | `Views/AppDeployment/Create.cshtml`, `Edit.cshtml`, `_DeploymentFormFooter.cshtml`, `InvalidToken.cshtml` | Save + Start buttons, token hidden field |
@@ -343,15 +410,18 @@ Those can be added later if/when full authentication ships.
 1. Apply migration (`dotnet ef database update`).
 2. Start the app.
 3. Open `/AppDeployment/Create` directly → InvalidToken page.
-4. Postman: create token with correct `X-Api-Key` → receive `formUrl`.
-5. Postman: wrong API key → 401.
-6. Open `formUrl` → Create form, App Name prefilled from `clientAppName`.
-7. Submit Create successfully → success message, Edit form, **Start** button enabled.
-8. Open same `formUrl` again → Edit form.
-9. Update a field and submit Save → success, stay on Edit (no workflow).
-10. Click **Start App Deployment Process** → workflow progress page.
-11. Postman issue again for same client/app → same token, `alreadyExisted: true`.
-12. Index no longer shows “+ New deployment” CTA; banner points admins at the API.
+4. Postman: create token with correct `X-Api-Key` (no `email`) → receive `formUrl`, `emailSent: false`, `emailRecipient: null`.
+5. Postman: create/reuse token **with** `email` and valid `MailgunSMTP` config → `emailSent: true`, inbox receives form link.
+6. Postman: with `email` but incomplete SMTP config → still 200 with `formUrl`, `emailSent: false`, `emailError` set.
+7. Postman: invalid `email` format → 400 validation error.
+8. Postman: wrong API key → 401.
+9. Open `formUrl` → Create form, App Name prefilled from `clientAppName`.
+10. Submit Create successfully → success message, Edit form, **Start** button enabled.
+11. Open same `formUrl` again → Edit form.
+12. Update a field and submit Save → success, stay on Edit (no workflow).
+13. Click **Start App Deployment Process** → workflow progress page.
+14. Postman issue again for same client/app → same token, `alreadyExisted: true`.
+15. Index no longer shows “+ New deployment” CTA; banner points admins at the API.
 
 ---
 
