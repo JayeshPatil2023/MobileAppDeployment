@@ -1,26 +1,107 @@
-# Template copied into each client repo as .github/workflows/Base-client-deployment.yml
-# Keep workflow_dispatch so the base workflow can trigger this file via API.
-
-name: Client Mobile Deployment
+name: test-iOS Self Hosted Build
 
 on:
   workflow_dispatch:
 
-permissions:
-  contents: read
-
 jobs:
-  deploy:
-    name: Deploy mobile application
-    runs-on: windows-latest
+  ios-build:
+    runs-on: [self-hosted, macOS, ARM64]
+    env:
+      DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
 
     steps:
-      - name: Checkout client repository
+      - name: Checkout
         uses: actions/checkout@v4
+        with:
+            clean: false
 
-      - name: Placeholder deployment step
-        shell: pwsh
+      - name: Select Xcode
+        env:
+         MACOS_ADMIN_PASSWORD: ${{ secrets.MACOS_ADMIN_PASSWORD }}
         run: |
-          Write-Host "Replace this step with your client mobile deployment pipeline."
-          Write-Host "Repository: ${{ github.repository }}"
-          Write-Host "Ref: ${{ github.ref_name }}"
+              echo "$MACOS_ADMIN_PASSWORD" | sudo -S xcode-select -s /Applications/Xcode.app/Contents/Developer
+              xcodebuild -version
+
+      - name: Show versions
+        run: |
+          sw_vers
+          xcodebuild -version
+          node -v
+          npm -v
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # - name: Clean old npm and web folders
+      #   run: |
+      #     echo "******************* REMOVE FOLDERS FOR NODE MODULES, PLUGINS, WWW AND PLATFORMS *******************"
+      #     rm -rf node_modules/ www/ package-lock.json
+
+      # - name: Run npm install
+      #   run: |
+      #     echo "******************* RUN NPM INSTALL *******************"
+      #     npm install
+      
+      - name: Install npm dependencies
+        run: |
+              if [ ! -d "node_modules" ]; then
+                npm install
+              else
+                echo "Using existing node_modules"
+                npm install
+              fi
+
+
+      - name: npm Build
+        run:  npm run build
+
+      - name: Clean iOS
+        run: |
+            rm -rf ios/App/build
+            cd ios/App
+            xcodebuild -project App.xcodeproj clean
+        
+      - name: Sync Capacitor iOS
+        run: npx cap sync ios
+
+      - name: Install Pods
+        run: |
+          cd ios/App
+          pod install
+          cd ../..
+
+      # Assumes run_screenshots.sh and maestro_screenshots.yaml are in the client repo root.
+      # Does not repeat npm build / cap sync / pod install.
+      - name: Capture iOS App Store screenshots
+        env:
+          SCREENSHOT_OUTPUT_DIR: ${{ github.workspace }}/screenshots
+          # Self-hosted Mac Actions is colder than an interactive Terminal run.
+          MAESTRO_TIMEOUT_SEC: "1200"
+        run: |
+          chmod +x ./run_screenshots.sh
+          ./run_screenshots.sh
+
+      # AfterSignIn / Home / failure hierarchies explain CI-only login issues.
+      - name: Upload iOS screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-screenshots-${{ github.run_number }}
+          path: screenshots/
+          if-no-files-found: warn
+      
+      # - name: Create App Store API Key
+      #   run: |
+      #     echo "APPLE_API_KEY_PATH=systenics/BidMaster/ios/App/fastlane/AuthKey_QB3HBC8Q5N.p8" >> $GITHUB_ENV
+      #     echo "APPLE_API_KEY_ID=${{ secrets.APPLE_API_KEY_ID }}" >> $GITHUB_ENV
+      #     echo "APPLE_API_ISSUER_ID=${{ secrets.APPLE_API_ISSUER_ID }}" >> $GITHUB_ENV
+
+      # - name: Beta Release
+      #   run: |
+      #     cd ios/App
+      #     fastlane beta
+      #     cd ../..
+
+     

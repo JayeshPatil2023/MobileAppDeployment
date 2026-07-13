@@ -1,0 +1,144 @@
+appId: ${BUNDLE_ID}
+---
+# iOS-only Maestro flow for App Store screenshots.
+# ${BUNDLE_ID} is substituted at runtime by ./run_screenshots.sh (client repo root).
+#
+# Important app behaviors this flow accounts for:
+# - /login hides the bottom tab bar (shared.service hiddenBottomMenuUrls).
+#   BottomTabBrowse / BottomTabMyAccount only exist AFTER a successful login.
+# - When ACP HomepageContentInfo is "browse" (Redirect to Browse page),
+#   isBrowseTabOptionVisible is false — do not require BottomTabBrowse.
+
+- launchApp:
+    clearState: true
+    stopApp: true
+    appId: "${BUNDLE_ID}"
+    permissions:
+      all: allow
+      notifications: allow
+
+# iOS may still show the notifications alert even with permissions.notifications=allow.
+- extendedWaitUntil:
+    visible: "Allow"
+    timeout: 15000
+    optional: true
+- runFlow:
+    when:
+      visible: "Allow"
+    commands:
+      - repeat:
+          times: 3
+          while:
+            visible: "Allow"
+          commands:
+            - tapOn:
+                text: "Allow"
+                retryTapIfNoChange: true
+            - waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Allow"
+    commands:
+      - tapOn:
+          point: "70%,55%"
+      - waitForAnimationToEnd
+- waitForAnimationToEnd
+
+- runFlow:
+    when:
+      visible: "(?i)May be Later"
+    commands:
+      - tapOn: "(?i)May be Later"
+- waitForAnimationToEnd
+
+- tapOn: "BottomTabLogin"
+- takeScreenshot: "Login"
+- tapOn: "user-email-input"
+- runFlow:
+    when:
+      visible: "Try out your stylus"
+    commands:
+      - tapOn: "Cancel"
+- eraseText
+- inputText: "buyer"
+- scrollUntilVisible:
+    element: "password"
+    direction: DOWN
+- waitForAnimationToEnd
+- tapOn: "password"
+- eraseText
+- inputText: "admin1234"
+
+# Submit login. Prefer the button (more reliable than keyboard Return in CI WebViews).
+# Do NOT call hideKeyboard here — on iOS it scrolls the screen and can race the login UI.
+- scrollUntilVisible:
+    element: "sign-in-btn"
+    direction: DOWN
+- waitForAnimationToEnd
+- tapOn:
+    text: "sign-in-btn"
+    retryTapIfNoChange: true
+- waitForAnimationToEnd
+
+# If the first tap did not leave the login page, try once more.
+- runFlow:
+    when:
+      visible: "sign-in-btn"
+    commands:
+      - tapOn:
+          text: "sign-in-btn"
+          retryTapIfNoChange: true
+      - waitForAnimationToEnd
+
+- runFlow:
+    when:
+      visible: "(?i)May be Later"
+    commands:
+      - tapOn: "(?i)May be Later"
+      - waitForAnimationToEnd
+
+- takeScreenshot: "AfterSignIn"
+
+# Proof of login: Account tab only renders when isUserLoggedIn (tab bar returns after leaving /login).
+- extendedWaitUntil:
+    visible: "BottomTabMyAccount"
+    timeout: 180000
+- takeScreenshot: "Home"
+
+# Browse tab is omitted when HomepageContentInfo == "browse" (already on listings).
+- runFlow:
+    when:
+      visible: "BottomTabBrowse"
+    commands:
+      - tapOn: "BottomTabBrowse"
+      - waitForAnimationToEnd
+- takeScreenshot: "Browse"
+- extendedWaitUntil:
+    visible: "list-item-0"
+    timeout: 60000
+- tapOn: "list-item-0"
+- waitForAnimationToEnd
+- takeScreenshot: "Listing"
+- tapOn: "headerBackBtn"
+- waitForAnimationToEnd
+- tapOn: "BottomTabWatchlist"
+- waitForAnimationToEnd
+- takeScreenshot: "Watchlist"
+- tapOn: "headerBackBtn"
+- waitForAnimationToEnd
+- tapOn: "BottomTabMyBids"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "headerBackBtn"
+    timeout: 10000
+- takeScreenshot: "MyBid"
+- tapOn: "headerBackBtn"
+- waitForAnimationToEnd
+- tapOn: "BottomTabMyAccount"
+- waitForAnimationToEnd
+- takeScreenshot: "Account"
+- scrollUntilVisible:
+    element: "MyAccountSignOutBtn"
+    direction: DOWN
+- tapOn: "MyAccountSignOutBtn"
+- killApp
