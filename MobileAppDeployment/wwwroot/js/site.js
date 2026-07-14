@@ -1,8 +1,6 @@
 ﻿(function () {
   'use strict';
 
-  const formSections = ['sec-org', 'sec-app', 'sec-identifiers', 'sec-apple', 'sec-assets', 'sec-onesignal', 'sec-firebase', 'sec-contact'];
-
   function getScrollOffset() {
     const styles = getComputedStyle(document.documentElement);
     const headerH = parseFloat(styles.getPropertyValue('--header-h')) || 64;
@@ -10,24 +8,37 @@
     return headerH + rem * 1.5;
   }
 
+  /**
+   * Highlights the sidebar link for the section currently in view.
+   * Section IDs are read from the sidebar markup (data-section), so highlight
+   * stays correct when form section order/IDs change.
+   */
   function initSidebarScrollSpy() {
-    const links = document.querySelectorAll('.sidebar-nav a[data-section]');
+    const links = Array.from(document.querySelectorAll('.sidebar-nav a[data-section]'));
     if (!links.length) return;
+
+    const sectionIds = links
+      .map((link) => link.dataset.section)
+      .filter(Boolean);
 
     const observer = new IntersectionObserver(
       (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
-          const id = entry.target.id;
-          links.forEach((link) => {
-            link.classList.toggle('active', link.dataset.section === id);
-          });
+        // Prefer the top-most intersecting section so reordered sections highlight correctly.
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+
+        if (!visible.length) return;
+
+        const activeId = visible[0].target.id;
+        links.forEach((link) => {
+          link.classList.toggle('active', link.dataset.section === activeId);
         });
       },
       { rootMargin: '-20% 0px -60% 0px', threshold: 0 }
     );
 
-    formSections.forEach((id) => {
+    sectionIds.forEach((id) => {
       const el = document.getElementById(id);
       if (el) observer.observe(el);
     });
@@ -37,6 +48,8 @@
         e.preventDefault();
         const target = document.getElementById(link.dataset.section);
         if (!target) return;
+
+        links.forEach((l) => l.classList.toggle('active', l === link));
 
         const top = target.getBoundingClientRect().top + window.scrollY - getScrollOffset();
         window.scrollTo({ top, behavior: 'smooth' });
@@ -104,42 +117,6 @@
         }
       });
     });
-  }
-
-  function initFormProgress() {
-    const form = document.getElementById('deployment-form');
-    const fill = document.getElementById('prog-fill');
-    const pct = document.getElementById('prog-pct');
-    if (!form || !fill || !pct) return;
-
-    const requiredSelectors = [
-      'input[required]:not([type="file"])',
-      'textarea[required]',
-      'input[type="file"][required]'
-    ];
-
-    function updateProgress() {
-      const fields = form.querySelectorAll(requiredSelectors.join(','));
-      let filled = 0;
-
-      fields.forEach((field) => {
-        if (field.type === 'file') {
-          if (field.files && field.files.length > 0) filled++;
-          else if (field.dataset.hasExisting === 'true') filled++;
-        } else if (field.value && field.value.trim()) {
-          filled++;
-        }
-      });
-
-      const total = fields.length || 1;
-      const percent = Math.round((filled / total) * 100);
-      fill.style.width = percent + '%';
-      pct.textContent = percent + '%';
-    }
-
-    form.addEventListener('input', updateProgress);
-    form.addEventListener('change', updateProgress);
-    updateProgress();
   }
 
   function initAlertDismiss() {
@@ -298,7 +275,6 @@
   document.addEventListener('DOMContentLoaded', () => {
     initSidebarScrollSpy();
     initUploadZones();
-    initFormProgress();
     initAlertDismiss();
     initFieldHelp();
     initProgressPoller();
