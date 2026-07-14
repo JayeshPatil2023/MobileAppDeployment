@@ -12,7 +12,6 @@
             <div class="section-title">OneSignal notification section</div>
             <div class="section-desc">Push notification credentials from your OneSignal app</div>
         </div>
-        <span class="section-badge badge-required">Required</span>
     </div>
     <div class="section-body">
         <div class="grid-3">
@@ -60,7 +59,6 @@
             <div class="section-title">Firebase config</div>
             <div class="section-desc">Upload platform configuration files from Firebase console</div>
         </div>
-        <span class="section-badge badge-required">Required</span>
     </div>
     <div class="section-body">
         <div class="config-upload-stack">
@@ -74,9 +72,6 @@
                     </div>
                     <span class="upload-spec">Drag and drop or click to upload for iOS</span>
                     <span class="upload-filename"></span>
-                    <span class="upload-status @(string.IsNullOrEmpty(Model.FirebaseIosConfigPath) ? "upload-status--pending" : "upload-status--ok")">
-                        @(string.IsNullOrEmpty(Model.FirebaseIosConfigPath) ? "Awaiting upload" : "File detected")
-                    </span>
                 </div>
                 <input type="file" id="firebaseIosConfigFile" name="firebaseIosConfigFile" class="file-hidden"
                        accept=".plist" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.FirebaseIosConfigPath) ? "true" : "false")" />
@@ -92,9 +87,6 @@
                     </div>
                     <span class="upload-spec">Drag and drop or click to upload for Android</span>
                     <span class="upload-filename"></span>
-                    <span class="upload-status @(string.IsNullOrEmpty(Model.FirebaseAndroidConfigPath) ? "upload-status--pending" : "upload-status--ok")">
-                        @(string.IsNullOrEmpty(Model.FirebaseAndroidConfigPath) ? "Awaiting upload" : "File detected")
-                    </span>
                 </div>
                 <input type="file" id="firebaseAndroidConfigFile" name="firebaseAndroidConfigFile" class="file-hidden"
                        accept=".json,application/json" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.FirebaseAndroidConfigPath) ? "true" : "false")" />

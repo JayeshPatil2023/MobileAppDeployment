@@ -10,9 +10,7 @@
         </div>
         <div class="section-title-group">
             <div class="section-title">Mobile configuration</div>
-            <div class="section-desc">Android and iOS build identifiers. Must match your store registrations exactly.</div>
         </div>
-        <span class="section-badge badge-required">Required</span>
     </div>
     <div class="section-body">
 
@@ -59,9 +57,6 @@
                     </div>
                     <span class="upload-spec">Upload Google Play service-account key JSON</span>
                     <span class="upload-filename"></span>
-                    <span class="upload-status @(string.IsNullOrEmpty(Model.PlayStoreKeyPath) ? "upload-status--pending" : "upload-status--ok")">
-                        @(string.IsNullOrEmpty(Model.PlayStoreKeyPath) ? "Awaiting upload" : "File detected")
-                    </span>
                 </div>
                 <input type="file" id="playStoreKeyFile" name="playStoreKeyFile" class="file-hidden"
                        accept=".json,application/json" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.PlayStoreKeyPath) ? "true" : "false")" />
@@ -136,9 +131,6 @@
                     </div>
                     <span class="upload-spec">Upload App Store Connect API auth key (.p8)</span>
                     <span class="upload-filename"></span>
-                    <span class="upload-status @(string.IsNullOrEmpty(Model.AppleAuthKeyPath) ? "upload-status--pending" : "upload-status--ok")">
-                        @(string.IsNullOrEmpty(Model.AppleAuthKeyPath) ? "Awaiting upload" : "File detected")
-                    </span>
                 </div>
                 <input type="file" id="appleAuthKeyFile" name="appleAuthKeyFile" class="file-hidden"
                        accept=".p8,application/octet-stream,text/plain" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.AppleAuthKeyPath) ? "true" : "false")" />

@@ -1,5 +1,58 @@
 @model MobileAppDeployment.Models.AppDeployment
 
+<div class="section" id="sec-app">
+    <div class="section-header">
+        <div class="section-icon icon-app">
+            <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" /><line x1="12" y1="18" x2="12.01" y2="18" /></svg>
+        </div>
+        <div class="section-title-group">
+            <div class="section-title">General app details</div>
+        </div>
+    </div>
+    <div class="section-body">
+        <div class="field">
+            <div class="field-label-wrap">
+                <label asp-for="AppName" class="field-label">App name <span class="required">*</span></label>
+                <field-help key="AppName" />
+            </div>
+            <input asp-for="AppName" class="form-input" maxlength="30" />
+            <span asp-validation-for="AppName" class="field-error"></span>
+            <span class="field-hint">Maximum 30 characters.</span>
+        </div>
+        <div class="field spacer">
+            <div class="field-label-wrap">
+                <label asp-for="ShortDescription" class="field-label">Short description <span class="required">*</span></label>
+                <field-help key="ShortDescription" />
+            </div>
+            <input asp-for="ShortDescription" class="form-input" maxlength="80" />
+            <span asp-validation-for="ShortDescription" class="field-error"></span>
+            <span class="field-hint">Maximum 80 characters.</span>
+        </div>
+        <div class="field spacer">
+            <div class="field-label-wrap">
+                <label asp-for="FullDescription" class="field-label">Full description <span class="required">*</span></label>
+                <field-help key="FullDescription" />
+            </div>
+            <textarea asp-for="FullDescription" maxlength="4000"></textarea>
+            <span asp-validation-for="FullDescription" class="field-error"></span>
+            <span class="field-hint">Maximum 4000 characters.</span>
+        </div>
+        <div class="field spacer">
+            <div class="field-label-wrap">
+                <label asp-for="DomainUrl" class="field-label">Website Url <span class="required">*</span></label>
+                <field-help key="DomainUrl" />
+            </div>
+            <input asp-for="DomainUrl" class="form-input" type="url" placeholder="https://yourapp.com" />
+            <span asp-validation-for="DomainUrl" class="field-error"></span>
+        </div>
+    </div>
+</div>
+
+
+<partial name="_IdentifierFields" model="Model" />
+
+<partial name="_AssetFields" model="Model" />
+
 <div class="section" id="sec-org">
     <div class="section-header">
         <div class="section-icon icon-org">
@@ -9,7 +62,6 @@
             <div class="section-title">Certificate / organization details</div>
             <div class="section-desc">SSL certificate fields used for app signing and domain verification</div>
         </div>
-        <span class="section-badge badge-required">Required</span>
     </div>
     <div class="section-body">
         <div class="grid-2">
@@ -76,61 +128,8 @@
                 <span asp-validation-for="AdminEmail" class="field-error"></span>
             </div>
         </div>
-        <div class="field spacer">
-            <div class="field-label-wrap">
-                <label asp-for="DomainUrl" class="field-label">Domain <span class="required">*</span></label>
-                <field-help key="DomainUrl" />
-            </div>
-            <input asp-for="DomainUrl" class="form-input" type="url" placeholder="https://yourapp.com" />
-            <span asp-validation-for="DomainUrl" class="field-error"></span>
-            <span class="field-hint">Point your domain's A record to the deployment server. A free SSL certificate will be issued automatically via Let's Encrypt.</span>
-        </div>
     </div>
 </div>
-
-<div class="section" id="sec-app">
-    <div class="section-header">
-        <div class="section-icon icon-app">
-            <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-        </div>
-        <div class="section-title-group">
-            <div class="section-title">General app details</div>
-            <div class="section-desc">Core app information shown across store listings</div>
-        </div>
-        <span class="section-badge badge-required">Required</span>
-    </div>
-    <div class="section-body">
-        <div class="field">
-            <div class="field-label-wrap">
-                <label asp-for="AppName" class="field-label">App name <span class="required">*</span></label>
-                <field-help key="AppName" />
-            </div>
-            <input asp-for="AppName" class="form-input" maxlength="30" />
-            <span asp-validation-for="AppName" class="field-error"></span>
-            <span class="field-hint">Maximum 30 characters.</span>
-        </div>
-        <div class="field spacer">
-            <div class="field-label-wrap">
-                <label asp-for="ShortDescription" class="field-label">Short description <span class="required">*</span></label>
-                <field-help key="ShortDescription" />
-            </div>
-            <input asp-for="ShortDescription" class="form-input" maxlength="80" />
-            <span asp-validation-for="ShortDescription" class="field-error"></span>
-            <span class="field-hint">Maximum 80 characters.</span>
-        </div>
-        <div class="field spacer">
-            <div class="field-label-wrap">
-                <label asp-for="FullDescription" class="field-label">Full description <span class="required">*</span></label>
-                <field-help key="FullDescription" />
-            </div>
-            <textarea asp-for="FullDescription" maxlength="4000"></textarea>
-            <span asp-validation-for="FullDescription" class="field-error"></span>
-            <span class="field-hint">Maximum 4000 characters.</span>
-        </div>
-    </div>
-</div>
-
-<partial name="_IdentifierFields" model="Model" />
 
 <div class="section" id="sec-apple">
     <div class="section-header">
@@ -218,8 +217,6 @@
 
 <partial name="_NotificationConfigFields" model="Model" />
 
-<partial name="_AssetFields" model="Model" />
-
 <div class="section" id="sec-contact">
     <div class="section-header">
         <div class="section-icon icon-contact">
@@ -229,7 +226,6 @@
             <div class="section-title">Contact information</div>
             <div class="section-desc">Store contact details and privacy policy</div>
         </div>
-        <span class="section-badge badge-required">Required</span>
     </div>
     <div class="section-body">
         <div class="grid-2">
