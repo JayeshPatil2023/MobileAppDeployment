@@ -27,31 +27,7 @@
     }
 
     <div class="footer-right">
-        @if (canStartDeployment)
-        {
-            <form asp-action="StartDeployment"
-                  asp-route-id="@deploymentId"
-                  asp-route-token="@formToken"
-                  method="post"
-                  class="deployment-start-form">
-                @Html.AntiForgeryToken()
-                <button type="submit"
-                        class="btn btn-start"
-                        title="Starts deployment using the last saved form data. Save first if you edited anything.">
-                    Initiate Deployment
-                </button>
-            </form>
-        }
-        else
-        {
-            <button type="button"
-                    class="btn btn-start"
-                    disabled
-                    title="Save the deployment first to enable workflow execution">
-                Initiate Deployment
-            </button>
-        }
-
+        <partial name="_StartDeploymentButton" />
         <button type="submit" class="btn btn-primary" form="deployment-form">Save Deployment</button>
     </div>
 </div>

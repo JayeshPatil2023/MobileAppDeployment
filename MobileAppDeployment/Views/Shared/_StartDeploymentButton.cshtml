@@ -1,0 +1,33 @@
+@{
+    // Shared Start/Initiate Deployment control used by the site header and form footer.
+    // Enable/disable and POST target follow ViewBag.DeploymentId + ViewBag.FormToken.
+    int? deploymentId = ViewBag.DeploymentId as int?;
+    string? formToken = ViewBag.FormToken as string;
+    bool canStartDeployment = deploymentId is > 0;
+}
+
+@if (canStartDeployment)
+{
+    <form asp-controller="AppDeployment"
+          asp-action="StartDeployment"
+          asp-route-id="@deploymentId"
+          asp-route-token="@formToken"
+          method="post"
+          class="deployment-start-form">
+        @Html.AntiForgeryToken()
+        <button type="submit"
+                class="btn btn-start"
+                title="Starts deployment using the last saved form data. Save first if you edited anything.">
+            Initiate Deployment
+        </button>
+    </form>
+}
+else
+{
+    <button type="button"
+            class="btn btn-start"
+            disabled
+            title="Save the deployment first to enable workflow execution">
+        Initiate Deployment
+    </button>
+}

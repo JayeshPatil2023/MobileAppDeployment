@@ -145,6 +145,17 @@ a:hover { text-decoration: underline; }
   transition: background .15s;
 }
 .header-action:hover { background: var(--accent-dark); text-decoration: none; color: #fff; }
+.header-deployment-action {
+  display: flex;
+  align-items: center;
+}
+.header-deployment-action .deployment-start-form {
+  margin: 0;
+  display: inline;
+}
+.header-deployment-action .btn-start {
+  white-space: nowrap;
+}
 
 /* ── Main content area ─────────────────────────────────────── */
 .site-main {
@@ -890,6 +901,7 @@ input[type="file"].file-hidden { display: none; }
   border-color: #86EFAC;
   color: #14532D;
   cursor: not-allowed;
+  pointer-events: auto;
 }
 
 /* ── Form footer ─────────────────────────────────────────────── */

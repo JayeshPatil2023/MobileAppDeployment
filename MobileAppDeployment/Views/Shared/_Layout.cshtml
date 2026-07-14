@@ -31,7 +31,14 @@
             </nav>
             <span class="header-badge">Store submission</span>
             <div class="header-spacer"></div>
-            @if (currentAction != "Create")
+            @if (isFormLayout)
+            {
+                @* Same shared Start Deployment control as the form footer — always reachable without scrolling. *@
+                <div class="header-deployment-action">
+                    <partial name="_StartDeploymentButton" />
+                </div>
+            }
+            else if (currentAction != "Create" && currentAction != "Form" && currentAction != "Edit")
             {
                 <a class="header-action" asp-controller="AppDeployment" asp-action="Create">+ New deployment</a>
             }
