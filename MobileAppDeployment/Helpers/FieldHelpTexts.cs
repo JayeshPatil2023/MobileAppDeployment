@@ -104,7 +104,7 @@ public static class FieldHelpTexts
             "The Firebase configuration file for Android, downloaded from the Firebase console (Project settings → Your apps → Android). Place the file in your Android app module. It links your app to your Firebase project for messaging, analytics, and other services."),
         ["mobileAppIconFile"] = new(
             "Mobile app icon",
-            "The master app icon used to generate all required sizes for iOS and Android. Upload a 1024 × 1024 PNG without transparency (no alpha channel). Keep the logo centered with safe margins — corners may be masked on some devices."),
+            "The app icon used across store listings and generated device sizes. Upload a PNG or JPEG, up to 1 MB, exactly 512 × 512 pixels. Keep the logo centered with safe margins — corners may be masked on some devices."),
         ["launchImageFile"] = new(
             "Launch image",
             "The splash screen image shown while your app loads. Upload a 2732 × 2732 PNG. Keep important content within the central 1024 × 1024 safe zone, as edges may be cropped on different screen sizes and orientations."),
@@ -113,7 +113,7 @@ public static class FieldHelpTexts
             "The high-resolution icon displayed on your Google Play store listing. Must be 512 × 512 PNG with a solid, opaque background. Google Play does not accept transparent backgrounds for store icons."),
         ["featureGraphicFile"] = new(
             "Feature graphic / banner",
-            "A promotional banner shown at the top of your Google Play listing. Required dimensions are 1024 × 500 pixels in JPEG or PNG format. Use it to showcase your brand, key features, or a compelling visual that represents the app."),
+            "A promotional banner shown at the top of your Google Play listing. Must be a PNG or JPEG, up to 15 MB, and exactly 1024 × 500 pixels. Use it to showcase your brand, key features, or a compelling visual that represents the app."),
         ["ContactFirstName"] = new(
             "First name",
             "The first name of the person Apple and Google can contact regarding this app submission. Use a real contact who can respond to store review inquiries."),

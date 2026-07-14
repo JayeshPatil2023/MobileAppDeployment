@@ -164,6 +164,14 @@ public class AppDeploymentController : Controller
         // Partial drafts are allowed — drop all binding errors except Org Name + App Name.
         AppDeploymentValidation.ApplySaveValidation(ModelState, model);
 
+        // If the user uploads an asset on save, enforce type / size / exact dimensions.
+        AssetImageValidator.ValidateUploadedImages(
+            ModelState,
+            mobileAppIconFile,
+            launchImageFile,
+            storeIconFile,
+            featureGraphicFile);
+
         if (!ModelState.IsValid)
         {
             return View(model);
@@ -416,6 +424,14 @@ public class AppDeploymentController : Controller
         // Partial drafts are allowed — drop all binding errors except Org Name + App Name.
         AppDeploymentValidation.ApplySaveValidation(ModelState, model);
 
+        // If the user uploads an asset on save, enforce type / size / exact dimensions.
+        AssetImageValidator.ValidateUploadedImages(
+            ModelState,
+            mobileAppIconFile,
+            launchImageFile,
+            storeIconFile,
+            featureGraphicFile);
+
         if (!ModelState.IsValid)
         {
             ViewBag.DeploymentId = model.Id;
@@ -539,7 +555,7 @@ public class AppDeploymentController : Controller
     {
         if (mobileAppIconFile is { Length: > 0 })
         {
-            model.MobileAppIconPath = await _assetStorage.SaveAssetAsync(deploymentId, mobileAppIconFile, "mobile-app-icon", PngOnly);
+            model.MobileAppIconPath = await _assetStorage.SaveAssetAsync(deploymentId, mobileAppIconFile, "mobile-app-icon", PngOrJpeg);
         }
 
         if (launchImageFile is { Length: > 0 })

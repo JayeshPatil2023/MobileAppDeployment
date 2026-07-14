@@ -75,6 +75,84 @@
         zone.classList.toggle('upload-zone--invalid', !!message);
       }
 
+      function clearPreview() {
+        const filenameEl = zone.querySelector('.upload-filename');
+        const previewWrap = document.getElementById(zone.dataset.preview);
+        const previewImg = previewWrap?.querySelector('img');
+        const statusEl = zone.querySelector('.upload-status');
+
+        zone.classList.remove('has-file');
+        if (filenameEl) filenameEl.textContent = '';
+        if (previewWrap) previewWrap.classList.remove('visible');
+        if (previewImg) previewImg.removeAttribute('src');
+        if (statusEl) {
+          statusEl.textContent = 'Awaiting upload';
+          statusEl.classList.add('upload-status--pending');
+          statusEl.classList.remove('upload-status--ok');
+        }
+      }
+
+      /**
+       * Validates extension, optional max bytes, and exact pixel size from data-* attributes.
+       * Rejects the file (clears input) when invalid so a bad asset cannot be saved.
+       */
+      function validateSelectedImage(file) {
+        const allowedExt = (input.dataset.allowedExt || '')
+          .split(',')
+          .map((x) => x.trim().toLowerCase())
+          .filter(Boolean);
+        const exactWidth = parseInt(input.dataset.exactWidth || '0', 10);
+        const exactHeight = parseInt(input.dataset.exactHeight || '0', 10);
+        const maxBytes = parseInt(input.dataset.maxBytes || '0', 10);
+
+        if (!allowedExt.length && !exactWidth && !exactHeight && !maxBytes) {
+          return Promise.resolve(null);
+        }
+
+        const name = file.name || '';
+        const dot = name.lastIndexOf('.');
+        const ext = dot >= 0 ? name.slice(dot).toLowerCase() : '';
+
+        if (allowedExt.length && !allowedExt.includes(ext)) {
+          const labels = allowedExt.map((e) => e.replace('.', '').toUpperCase());
+          return Promise.resolve(
+            `This file must be ${labels.join(' or ')}.`
+          );
+        }
+
+        if (maxBytes > 0 && file.size > maxBytes) {
+          const mb = maxBytes / (1024 * 1024);
+          const sizeLabel = mb >= 1
+            ? `${Number.isInteger(mb) ? mb : mb.toFixed(1)} MB`
+            : `${Math.round(maxBytes / 1024)} KB`;
+          return Promise.resolve(`This file must be ${sizeLabel} or smaller.`);
+        }
+
+        if (!exactWidth || !exactHeight || !file.type.startsWith('image/')) {
+          return Promise.resolve(null);
+        }
+
+        return new Promise((resolve) => {
+          const objectUrl = URL.createObjectURL(file);
+          const img = new Image();
+          img.onload = () => {
+            URL.revokeObjectURL(objectUrl);
+            if (img.naturalWidth !== exactWidth || img.naturalHeight !== exactHeight) {
+              resolve(
+                `Image must be exactly ${exactWidth} × ${exactHeight} px (uploaded image is ${img.naturalWidth} × ${img.naturalHeight} px).`
+              );
+            } else {
+              resolve(null);
+            }
+          };
+          img.onerror = () => {
+            URL.revokeObjectURL(objectUrl);
+            resolve('Could not read this image. Upload a valid PNG or JPEG.');
+          };
+          img.src = objectUrl;
+        });
+      }
+
       // After StartDeployment (or any server postback), paint zones red when ModelState
       // already rendered a field-validation-error next to the upload card.
       if (validationMessage && validationMessage.classList.contains('field-validation-error')) {
@@ -83,20 +161,30 @@
 
       zone.addEventListener('click', () => input.click());
 
-      input.addEventListener('change', () => {
+      input.addEventListener('change', async () => {
         const file = input.files && input.files[0];
         const filenameEl = zone.querySelector('.upload-filename');
         const previewWrap = document.getElementById(zone.dataset.preview);
         const previewImg = previewWrap?.querySelector('img');
 
         if (!file) {
-          zone.classList.remove('has-file');
-          if (filenameEl) filenameEl.textContent = '';
+          clearPreview();
+          return;
+        }
+
+        const error = await validateSelectedImage(file);
+        if (error) {
+          input.value = '';
+          clearPreview();
+          // Keep existing server file indicator only when a previous upload remains.
+          if (input.dataset.hasExisting === 'true') {
+            zone.classList.add('has-file');
+          }
+          setUploadValidationError(error);
           return;
         }
 
         zone.classList.add('has-file');
-        // Clear server/client invalid styling once the user picks a replacement file.
         setUploadValidationError('');
         if (filenameEl) filenameEl.textContent = file.name;
 

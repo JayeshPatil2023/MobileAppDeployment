@@ -10,7 +10,7 @@
         </div>
         <div class="section-title-group">
             <div class="section-title">Assets</div>
-            <div class="section-desc">All images must be PNG unless noted. Keep key content centred within safe zones.</div>
+            <div class="section-desc">Upload images that match the size and format listed for each asset.</div>
         </div>
     </div>
     <div class="section-body">
@@ -25,18 +25,23 @@
             <div class="asset-grid">
                 <div class="asset-item">
                     <div class="field-label-wrap field-label-wrap--asset">
-                        <div class="asset-label">Mobile app icon <span class="required">*</span> <span class="spec-badge">1024 × 1024</span></div>
+                        <div class="asset-label">Mobile app icon <span class="required">*</span> <span class="spec-badge">512 × 512</span></div>
                         <field-help key="mobileAppIconFile" />
                     </div>
                     <div class="@Html.UploadZoneClasses("mobileAppIconFile", !string.IsNullOrEmpty(Model.MobileAppIconPath))"
                          data-upload-zone="mobileAppIconFile" data-preview="prev-mobile-icon">
                         <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        <span class="upload-label">Click to upload PNG</span>
-                        <span class="upload-spec">1024 × 1024 · PNG · no alpha</span>
+                        <span class="upload-label">Click to upload PNG or JPEG</span>
+                        <span class="upload-spec">512 × 512 · PNG or JPEG · up to 1 MB</span>
                         <span class="upload-filename"></span>
                     </div>
                     <input type="file" id="mobileAppIconFile" name="mobileAppIconFile" class="file-hidden"
-                           accept=".png,image/png" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.MobileAppIconPath) ? "true" : "false")" />
+                           accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+                           data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.MobileAppIconPath) ? "true" : "false")"
+                           data-allowed-ext=".png,.jpg,.jpeg"
+                           data-exact-width="512"
+                           data-exact-height="512"
+                           data-max-bytes="1048576" />
                     <div class="preview-wrap @(string.IsNullOrEmpty(Model.MobileAppIconPath) ? "" : "visible")" id="prev-mobile-icon">
                         @if (!string.IsNullOrEmpty(Model.MobileAppIconPath))
                         {
@@ -48,7 +53,7 @@
                         }
                     </div>
                     @Html.ValidationMessage("mobileAppIconFile", "", new { @class = "field-error", data_valmsg_for = "mobileAppIconFile", data_valmsg_replace = "true" })
-                    <span class="field-hint" style="margin-top:6px;display:block">Auto-exported for all iOS and Android icon sizes.</span>
+                    <span class="field-hint" style="margin-top:6px;display:block">App icon must be a PNG or JPEG, up to 1 MB, 512 × 512 px.</span>
                     @if (isEdit && !string.IsNullOrEmpty(Model.MobileAppIconPath))
                     {
                         <div class="existing-file-note">Current file uploaded. Leave empty to keep existing.</div>
@@ -77,7 +82,11 @@
                     <span class="upload-filename"></span>
                 </div>
                 <input type="file" id="launchImageFile" name="launchImageFile" class="file-hidden"
-                       accept=".png,image/png" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.LaunchImagePath) ? "true" : "false")" />
+                       accept=".png,image/png"
+                       data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.LaunchImagePath) ? "true" : "false")"
+                       data-allowed-ext=".png"
+                       data-exact-width="2732"
+                       data-exact-height="2732" />
                 <div class="preview-wrap @(string.IsNullOrEmpty(Model.LaunchImagePath) ? "" : "visible")" id="prev-launch-image">
                     @if (!string.IsNullOrEmpty(Model.LaunchImagePath))
                     {
@@ -118,7 +127,11 @@
                         <span class="upload-filename"></span>
                     </div>
                     <input type="file" id="storeIconFile" name="storeIconFile" class="file-hidden"
-                           accept=".png,image/png" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.StoreIconPath) ? "true" : "false")" />
+                           accept=".png,image/png"
+                           data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.StoreIconPath) ? "true" : "false")"
+                           data-allowed-ext=".png"
+                           data-exact-width="512"
+                           data-exact-height="512" />
                     <div class="preview-wrap @(string.IsNullOrEmpty(Model.StoreIconPath) ? "" : "visible")" id="prev-store-icon">
                         @if (!string.IsNullOrEmpty(Model.StoreIconPath))
                         {
@@ -144,12 +157,17 @@
                     <div class="@Html.UploadZoneClasses("featureGraphicFile", !string.IsNullOrEmpty(Model.FeatureGraphicPath))"
                          data-upload-zone="featureGraphicFile" data-preview="prev-feature-graphic">
                         <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        <span class="upload-label">Click to upload JPEG or PNG</span>
-                        <span class="upload-spec">1024 × 500 · JPG or PNG</span>
+                        <span class="upload-label">Click to upload PNG or JPEG</span>
+                        <span class="upload-spec">1024 × 500 · PNG or JPEG · up to 15 MB</span>
                         <span class="upload-filename"></span>
                     </div>
                     <input type="file" id="featureGraphicFile" name="featureGraphicFile" class="file-hidden"
-                           accept=".png,.jpg,.jpeg,image/png,image/jpeg" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.FeatureGraphicPath) ? "true" : "false")" />
+                           accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+                           data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.FeatureGraphicPath) ? "true" : "false")"
+                           data-allowed-ext=".png,.jpg,.jpeg"
+                           data-exact-width="1024"
+                           data-exact-height="500"
+                           data-max-bytes="15728640" />
                     <div class="preview-wrap @(string.IsNullOrEmpty(Model.FeatureGraphicPath) ? "" : "visible")" id="prev-feature-graphic">
                         @if (!string.IsNullOrEmpty(Model.FeatureGraphicPath))
                         {
@@ -161,7 +179,7 @@
                         }
                     </div>
                     @Html.ValidationMessage("featureGraphicFile", "", new { @class = "field-error", data_valmsg_for = "featureGraphicFile", data_valmsg_replace = "true" })
-                    <span class="field-hint" style="margin-top:6px;display:block">Shown at the top of the Play Store listing.</span>
+                    <span class="field-hint" style="margin-top:6px;display:block">Feature graphic must be a PNG or JPEG, up to 15 MB, and 1024 × 500 px.</span>
                     @if (isEdit && !string.IsNullOrEmpty(Model.FeatureGraphicPath))
                     {
                         <div class="existing-file-note">Current file uploaded. Leave empty to keep existing.</div>
