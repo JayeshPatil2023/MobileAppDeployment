@@ -5,6 +5,13 @@
     bool tokenEdit = !string.IsNullOrEmpty(formToken);
 }
 
+@if (canStartDeployment)
+{
+    <p class="footer-save-reminder cell-muted">
+        Made changes? Click <strong>Save Deployment</strong> before starting the process so your latest updates are used.
+    </p>
+}
+
 <div class="form-footer">
     @if (tokenEdit)
     {
@@ -28,7 +35,11 @@
                   method="post"
                   class="deployment-start-form">
                 @Html.AntiForgeryToken()
-                <button type="submit" class="btn btn-start">Start App Deployment Process</button>
+                <button type="submit"
+                        class="btn btn-start"
+                        title="Starts deployment using the last saved form data. Save first if you edited anything.">
+                    Start App Deployment Process
+                </button>
             </form>
         }
         else

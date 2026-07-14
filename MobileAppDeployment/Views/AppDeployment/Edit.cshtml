@@ -9,13 +9,20 @@
 <p class="page-title">Edit app deployment</p>
 <p class="page-sub">
     Update submission details for <strong>@Model.AppName</strong>.
-    Save your changes, then start the deployment process when you are ready.
     Leave asset uploads empty to keep existing files.
 </p>
 
+<div class="alert-banner alert-banner--info" role="note">
+    <span>
+        <strong>Before you start deployment:</strong>
+        if you changed any fields on this page, click <strong>Save Deployment</strong> first.
+        <strong>Start App Deployment Process</strong> uses your last saved values — unsaved edits will not be included.
+    </span>
+</div>
+
 <partial name="_DeploymentAlerts" />
 
-<form asp-action="Edit" asp-route-id="@Model.Id" asp-route-token="@formToken" method="post" enctype="multipart/form-data" id="deployment-form">
+<form asp-action="Edit" asp-route-id="@Model.Id" asp-route-token="@formToken" method="post" enctype="multipart/form-data" id="deployment-form" novalidate>
     <input type="hidden" asp-for="Id" />
     @if (!string.IsNullOrEmpty(formToken))
     {
@@ -30,4 +37,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <partial name="_SaveOnlyClientValidation" />
 }

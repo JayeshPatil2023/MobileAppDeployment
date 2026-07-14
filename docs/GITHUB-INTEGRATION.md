@@ -8,8 +8,8 @@
 
 **Saving** and **starting** the deployment workflow are separate steps:
 
-1. **Save deployment** (Create or Edit) — validates the form, saves PostgreSQL data and assets under `wwwroot/uploads/{id}/`, links the form-access token on first save. **Does not** start GitHub Actions.
-2. **Start App Deployment Process** (Edit only, after first save) — publishes logo/splash to `wwwroot/uploads/workflow-assets/`, dispatches the base workflow in `systenics/SA_BaseMVCProject`, and shows live progress with retries.
+1. **Save deployment** (Create or Edit) — requires only **Organization Name** and **App Name**, then saves PostgreSQL data and any uploaded assets under `wwwroot/uploads/{id}/`, linking the form-access token on first save. **Does not** start GitHub Actions or enforce full form completeness.
+2. **Start App Deployment Process** (Edit only, after first save) — runs **full** required-field + asset validation on the saved row; only then publishes logo/splash to `wwwroot/uploads/workflow-assets/`, dispatches the base workflow in `systenics/SA_BaseMVCProject`, and shows live progress with retries.
 
 Repo creation, local PowerShell merge, and the in-app merge progress path have been **removed** from the production Create flow.  
 Those operations now run inside GitHub Actions (see scripts under `MobileAppDeployment/Scripts/` and the workflow YAML in `SA_BaseMVCProject`).
@@ -25,10 +25,10 @@ User fills deployment form (Create via token URL)
 User clicks Save deployment
         │
         ▼
-Validate ModelState + required files + form-access token
+Validate Organization Name + App Name only (partial drafts allowed)
         │
         ▼
-Save AppDeployment to DB + store form assets under /uploads/{id}/
+Save AppDeployment to DB + store any uploaded assets under /uploads/{id}/
         │
         ▼
 Link form-access token → deployment (first save only)
@@ -45,6 +45,9 @@ User clicks Start App Deployment Process
         ▼
 POST /AppDeployment/StartDeployment/{id}
   • load saved deployment from DB (not unsaved form fields)
+  • full required-field + asset validation
+      - incomplete → re-show Edit with all errors (workflow blocked)
+      - complete → continue
   • IWorkflowOrchestrationService.StartWorkflowJobFromDeploymentAsync
       - copy logo/splash → wwwroot/uploads/workflow-assets/{client}/
       - build public URLs (PublicBaseUrl / ngrok)

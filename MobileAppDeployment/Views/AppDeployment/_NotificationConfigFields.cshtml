@@ -43,7 +43,7 @@
                 }
                 else
                 {
-                    <input asp-for="OneSignalRestApiKey" class="form-input mono-input" type="password" placeholder="Enter Rest API Key" required />
+                    <input asp-for="OneSignalRestApiKey" class="form-input mono-input" type="password" placeholder="Enter Rest API Key" />
                 }
                 <span asp-validation-for="OneSignalRestApiKey" class="field-error"></span>
             </div>
@@ -65,7 +65,7 @@
     <div class="section-body">
         <div class="config-upload-stack">
             <div class="config-upload-item">
-                <div class="upload-zone config-upload-zone @(string.IsNullOrEmpty(Model.FirebaseIosConfigPath) ? "" : "has-file")"
+                <div class="@Html.UploadZoneClasses("firebaseIosConfigFile", !string.IsNullOrEmpty(Model.FirebaseIosConfigPath), "config-upload-zone")"
                      data-upload-zone="firebaseIosConfigFile" data-upload-type="config">
                     <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                     <div class="field-label-wrap field-label-wrap--upload">
@@ -79,11 +79,11 @@
                     </span>
                 </div>
                 <input type="file" id="firebaseIosConfigFile" name="firebaseIosConfigFile" class="file-hidden"
-                       accept=".plist" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.FirebaseIosConfigPath) ? "true" : "false")" @(!isEdit ? "required" : null) />
-                <span class="field-error field-validation-valid" data-valmsg-for="firebaseIosConfigFile" data-valmsg-replace="true"></span>
+                       accept=".plist" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.FirebaseIosConfigPath) ? "true" : "false")" />
+                @Html.ValidationMessage("firebaseIosConfigFile", "", new { @class = "field-error", data_valmsg_for = "firebaseIosConfigFile", data_valmsg_replace = "true" })
             </div>
             <div class="config-upload-item">
-                <div class="upload-zone config-upload-zone @(string.IsNullOrEmpty(Model.FirebaseAndroidConfigPath) ? "" : "has-file")"
+                <div class="@Html.UploadZoneClasses("firebaseAndroidConfigFile", !string.IsNullOrEmpty(Model.FirebaseAndroidConfigPath), "config-upload-zone")"
                      data-upload-zone="firebaseAndroidConfigFile" data-upload-type="config">
                     <svg viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
                     <div class="field-label-wrap field-label-wrap--upload">
@@ -97,8 +97,8 @@
                     </span>
                 </div>
                 <input type="file" id="firebaseAndroidConfigFile" name="firebaseAndroidConfigFile" class="file-hidden"
-                       accept=".json,application/json" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.FirebaseAndroidConfigPath) ? "true" : "false")" @(!isEdit ? "required" : null) />
-                <span class="field-error field-validation-valid" data-valmsg-for="firebaseAndroidConfigFile" data-valmsg-replace="true"></span>
+                       accept=".json,application/json" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.FirebaseAndroidConfigPath) ? "true" : "false")" />
+                @Html.ValidationMessage("firebaseAndroidConfigFile", "", new { @class = "field-error", data_valmsg_for = "firebaseAndroidConfigFile", data_valmsg_replace = "true" })
             </div>
         </div>
     </div>

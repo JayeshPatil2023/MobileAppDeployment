@@ -32,6 +32,7 @@
             <div class="detail-item"><div class="detail-label">State</div><div class="detail-value">@Model.StateName</div></div>
             <div class="detail-item"><div class="detail-label">Country</div><div class="detail-value">@Model.Country</div></div>
             <div class="detail-item"><div class="detail-label">Admin email</div><div class="detail-value">@Model.AdminEmail</div></div>
+            <div class="detail-item detail-item--full"><div class="detail-label">Domain</div><div class="detail-value">@Model.DomainUrl</div></div>
         </div>
     </div>
 </div>
@@ -73,22 +74,6 @@
             <div class="detail-item"><div class="detail-label">Apple Issuer ID</div><div class="detail-value">@Model.AppleIssuerId</div></div>
             <div class="detail-item"><div class="detail-label">Apple Key ID</div><div class="detail-value">@Model.AppleKeyId</div></div>
             <div class="detail-item"><div class="detail-label">Apple Auth Key (.p8)</div><div class="detail-value">@(string.IsNullOrEmpty(Model.AppleAuthKeyPath) ? "Not uploaded" : "Uploaded")</div></div>
-        </div>
-    </div>
-</div>
-
-<div class="section">
-    <div class="section-header">
-        <div class="section-icon icon-website">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
-        </div>
-        <div class="section-title-group">
-            <div class="section-title">Website configuration</div>
-        </div>
-    </div>
-    <div class="section-body">
-        <div class="detail-grid">
-            <div class="detail-item detail-item--full"><div class="detail-label">Domain</div><div class="detail-value">@Model.DomainUrl</div></div>
         </div>
     </div>
 </div>

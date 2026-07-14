@@ -29,7 +29,7 @@
                         <div class="asset-label">Mobile app icon <span class="required">*</span> <span class="spec-badge">1024 × 1024</span></div>
                         <field-help key="mobileAppIconFile" />
                     </div>
-                    <div class="upload-zone @(string.IsNullOrEmpty(Model.MobileAppIconPath) ? "" : "has-file")"
+                    <div class="@Html.UploadZoneClasses("mobileAppIconFile", !string.IsNullOrEmpty(Model.MobileAppIconPath))"
                          data-upload-zone="mobileAppIconFile" data-preview="prev-mobile-icon">
                         <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                         <span class="upload-label">Click to upload PNG</span>
@@ -37,7 +37,7 @@
                         <span class="upload-filename"></span>
                     </div>
                     <input type="file" id="mobileAppIconFile" name="mobileAppIconFile" class="file-hidden"
-                           accept=".png,image/png" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.MobileAppIconPath) ? "true" : "false")" @(!isEdit ? "required" : null) />
+                           accept=".png,image/png" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.MobileAppIconPath) ? "true" : "false")" />
                     <div class="preview-wrap @(string.IsNullOrEmpty(Model.MobileAppIconPath) ? "" : "visible")" id="prev-mobile-icon">
                         @if (!string.IsNullOrEmpty(Model.MobileAppIconPath))
                         {
@@ -48,7 +48,7 @@
                             <img alt="Mobile app icon preview" />
                         }
                     </div>
-                    <span class="field-error field-validation-valid" data-valmsg-for="mobileAppIconFile" data-valmsg-replace="true"></span>
+                    @Html.ValidationMessage("mobileAppIconFile", "", new { @class = "field-error", data_valmsg_for = "mobileAppIconFile", data_valmsg_replace = "true" })
                     <span class="field-hint" style="margin-top:6px;display:block">Auto-exported for all iOS and Android icon sizes.</span>
                     @if (isEdit && !string.IsNullOrEmpty(Model.MobileAppIconPath))
                     {
@@ -70,7 +70,7 @@
                     <div class="asset-label">Launch image <span class="required">*</span> <span class="spec-badge">2732 × 2732</span></div>
                     <field-help key="launchImageFile" />
                 </div>
-                <div class="upload-zone @(string.IsNullOrEmpty(Model.LaunchImagePath) ? "" : "has-file")"
+                <div class="@Html.UploadZoneClasses("launchImageFile", !string.IsNullOrEmpty(Model.LaunchImagePath))"
                      data-upload-zone="launchImageFile" data-preview="prev-launch-image">
                     <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                     <span class="upload-label">Click to upload PNG</span>
@@ -78,7 +78,7 @@
                     <span class="upload-filename"></span>
                 </div>
                 <input type="file" id="launchImageFile" name="launchImageFile" class="file-hidden"
-                       accept=".png,image/png" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.LaunchImagePath) ? "true" : "false")" @(!isEdit ? "required" : null) />
+                       accept=".png,image/png" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.LaunchImagePath) ? "true" : "false")" />
                 <div class="preview-wrap @(string.IsNullOrEmpty(Model.LaunchImagePath) ? "" : "visible")" id="prev-launch-image">
                     @if (!string.IsNullOrEmpty(Model.LaunchImagePath))
                     {
@@ -89,7 +89,7 @@
                         <img alt="Launch image preview" />
                     }
                 </div>
-                <span class="field-error field-validation-valid" data-valmsg-for="launchImageFile" data-valmsg-replace="true"></span>
+                @Html.ValidationMessage("launchImageFile", "", new { @class = "field-error", data_valmsg_for = "launchImageFile", data_valmsg_replace = "true" })
                 <span class="field-hint" style="margin-top:6px;display:block">Keep key content in the central 1024 × 1024 safe zone.</span>
                 @if (isEdit && !string.IsNullOrEmpty(Model.LaunchImagePath))
                 {
@@ -111,7 +111,7 @@
                         <div class="asset-label">Store icon <span class="required">*</span> <span class="spec-badge">512 × 512</span></div>
                         <field-help key="storeIconFile" />
                     </div>
-                    <div class="upload-zone @(string.IsNullOrEmpty(Model.StoreIconPath) ? "" : "has-file")"
+                    <div class="@Html.UploadZoneClasses("storeIconFile", !string.IsNullOrEmpty(Model.StoreIconPath))"
                          data-upload-zone="storeIconFile" data-preview="prev-store-icon">
                         <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                         <span class="upload-label">Click to upload PNG</span>
@@ -119,7 +119,7 @@
                         <span class="upload-filename"></span>
                     </div>
                     <input type="file" id="storeIconFile" name="storeIconFile" class="file-hidden"
-                           accept=".png,image/png" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.StoreIconPath) ? "true" : "false")" @(!isEdit ? "required" : null) />
+                           accept=".png,image/png" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.StoreIconPath) ? "true" : "false")" />
                     <div class="preview-wrap @(string.IsNullOrEmpty(Model.StoreIconPath) ? "" : "visible")" id="prev-store-icon">
                         @if (!string.IsNullOrEmpty(Model.StoreIconPath))
                         {
@@ -130,7 +130,7 @@
                             <img alt="Store icon preview" />
                         }
                     </div>
-                    <span class="field-error field-validation-valid" data-valmsg-for="storeIconFile" data-valmsg-replace="true"></span>
+                    @Html.ValidationMessage("storeIconFile", "", new { @class = "field-error", data_valmsg_for = "storeIconFile", data_valmsg_replace = "true" })
                     <span class="field-hint" style="margin-top:6px;display:block">Solid background required — Play Store does not accept transparency.</span>
                     @if (isEdit && !string.IsNullOrEmpty(Model.StoreIconPath))
                     {
@@ -142,7 +142,7 @@
                         <div class="asset-label">Feature graphic / banner <span class="required">*</span> <span class="spec-badge">1024 × 500</span></div>
                         <field-help key="featureGraphicFile" />
                     </div>
-                    <div class="upload-zone @(string.IsNullOrEmpty(Model.FeatureGraphicPath) ? "" : "has-file")"
+                    <div class="@Html.UploadZoneClasses("featureGraphicFile", !string.IsNullOrEmpty(Model.FeatureGraphicPath))"
                          data-upload-zone="featureGraphicFile" data-preview="prev-feature-graphic">
                         <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                         <span class="upload-label">Click to upload JPEG or PNG</span>
@@ -150,7 +150,7 @@
                         <span class="upload-filename"></span>
                     </div>
                     <input type="file" id="featureGraphicFile" name="featureGraphicFile" class="file-hidden"
-                           accept=".png,.jpg,.jpeg,image/png,image/jpeg" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.FeatureGraphicPath) ? "true" : "false")" @(!isEdit ? "required" : null) />
+                           accept=".png,.jpg,.jpeg,image/png,image/jpeg" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.FeatureGraphicPath) ? "true" : "false")" />
                     <div class="preview-wrap @(string.IsNullOrEmpty(Model.FeatureGraphicPath) ? "" : "visible")" id="prev-feature-graphic">
                         @if (!string.IsNullOrEmpty(Model.FeatureGraphicPath))
                         {
@@ -161,7 +161,7 @@
                             <img alt="Feature graphic preview" />
                         }
                     </div>
-                    <span class="field-error field-validation-valid" data-valmsg-for="featureGraphicFile" data-valmsg-replace="true"></span>
+                    @Html.ValidationMessage("featureGraphicFile", "", new { @class = "field-error", data_valmsg_for = "featureGraphicFile", data_valmsg_replace = "true" })
                     <span class="field-hint" style="margin-top:6px;display:block">Shown at the top of the Play Store listing.</span>
                     @if (isEdit && !string.IsNullOrEmpty(Model.FeatureGraphicPath))
                     {

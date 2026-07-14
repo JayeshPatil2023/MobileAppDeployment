@@ -7,11 +7,14 @@
 }
 
 <p class="page-title">New app deployment</p>
-<p class="page-sub">Configure your mobile app submission details below. Fields marked <span style="color:var(--danger)">*</span> are required.</p>
+<p class="page-sub">
+    Fields marked <span style="color:var(--danger)">*</span> are required before you start deployment.
+    You can save a draft with only <strong>Organization Name</strong> and <strong>App Name</strong> filled.
+</p>
 
 <partial name="_DeploymentAlerts" />
 
-<form asp-action="Create" asp-route-token="@formToken" method="post" enctype="multipart/form-data" id="deployment-form">
+<form asp-action="Create" asp-route-token="@formToken" method="post" enctype="multipart/form-data" id="deployment-form" novalidate>
     <input type="hidden" name="token" value="@formToken" />
     <div asp-validation-summary="All"></div>
 
@@ -22,4 +25,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <partial name="_SaveOnlyClientValidation" />
 }

@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
+using MobileAppDeployment.Helpers;
 using MobileAppDeployment.Models;
 using MobileAppDeployment.Services;
 using MobileAppDeployment.Services.GitHub;
@@ -118,6 +118,10 @@ public class AppDeploymentController : Controller
     /// Saves deployment details for a valid unused token. Does not start the GitHub Actions workflow.
     /// </summary>
     /// <remarks>
+    /// <para>
+    /// Save validation is intentionally minimal: only Organization Name and App Name are required.
+    /// Remaining required fields / assets are enforced later by <see cref="StartDeployment"/>.
+    /// </para>
     /// After a successful save the client is redirected back to the same token URL, which now loads Edit.
     /// Workflow field mapping (used later by <see cref="StartDeployment"/>):
     /// AppName → client_name,
@@ -155,18 +159,10 @@ public class AppDeploymentController : Controller
         }
 
         ViewBag.FormToken = access.Token;
+        ViewBag.DeploymentId = null;
 
-        ValidateRequiredFiles(
-            ModelState,
-            isEdit: false,
-            mobileAppIconFile,
-            launchImageFile,
-            storeIconFile,
-            featureGraphicFile,
-            firebaseIosConfigFile,
-            firebaseAndroidConfigFile,
-            playStoreKeyFile,
-            appleAuthKeyFile);
+        // Partial drafts are allowed — drop all binding errors except Org Name + App Name.
+        AppDeploymentValidation.ApplySaveValidation(ModelState, model);
 
         if (!ModelState.IsValid)
         {
@@ -192,7 +188,7 @@ public class AppDeploymentController : Controller
             // Link token → deployment so later Form visits open Edit instead of Create.
             await _formAccessTokenService.MarkSubmittedAsync(access.Token, id);
 
-            TempData["SuccessMessage"] = "Deployment saved successfully.";
+            TempData["SuccessMessage"] = "Deployment saved successfully. Complete all required fields before starting deployment.";
             return RedirectToAction(nameof(Form), new { token = access.Token });
         }
         catch (InvalidOperationException ex)
@@ -206,6 +202,7 @@ public class AppDeploymentController : Controller
     /// Explicitly starts the base GitHub Actions workflow for a saved deployment.
     /// </summary>
     /// <remarks>
+    /// Full required-field and asset validation runs here (not on Save).
     /// Uses the <strong>persisted</strong> deployment row (not unsaved form fields).
     /// Logo and splash are published from stored asset paths under <c>wwwroot/uploads/{id}/</c>.
     /// </remarks>
@@ -223,12 +220,32 @@ public class AppDeploymentController : Controller
             {
                 return View("InvalidToken");
             }
+
+            ViewBag.FormToken = access.Token;
         }
 
         AppDeployment? deployment = await _service.GetByIdAsync(id);
         if (deployment is null)
         {
             return NotFound();
+        }
+
+        // Block workflow until every required field and asset path is present on the saved row.
+        if (!AppDeploymentValidation.ValidateForDeployment(deployment, ModelState))
+        {
+            _logger.LogInformation(
+                "StartDeployment blocked for {DeploymentId}: form is incomplete ({ErrorCount} validation errors).",
+                id,
+                ModelState.ErrorCount);
+
+            TempData["WarningMessage"] =
+                "Cannot start deployment until all required fields and assets are completed. See the errors below.";
+
+            // Re-display Edit with field-level errors; never clear the Rest API key from ModelState
+            // validation — only blank the input for the browser after validation already ran.
+            deployment.OneSignalRestApiKey = string.Empty;
+            ViewBag.DeploymentId = deployment.Id;
+            return View("Edit", deployment);
         }
 
         try
@@ -345,6 +362,7 @@ public class AppDeploymentController : Controller
     /// Updates an existing deployment. Does not start or re-trigger the base workflow.
     /// </summary>
     /// <remarks>
+    /// Save validation matches Create: only Organization Name and App Name are required.
     /// When <paramref name="token"/> is present, the token must own <paramref name="id"/>.
     /// Admin edits from Index omit the token.
     /// </remarks>
@@ -389,10 +407,14 @@ public class AppDeploymentController : Controller
 
         PreserveExistingPaths(model, existing);
 
-        if (!string.IsNullOrWhiteSpace(model.OneSignalRestApiKey))
+        // Blank Rest API key on Edit means "keep existing" — restore before save validation.
+        if (string.IsNullOrWhiteSpace(model.OneSignalRestApiKey))
         {
             ModelState.Remove(nameof(AppDeployment.OneSignalRestApiKey));
         }
+
+        // Partial drafts are allowed — drop all binding errors except Org Name + App Name.
+        AppDeploymentValidation.ApplySaveValidation(ModelState, model);
 
         if (!ModelState.IsValid)
         {
@@ -426,7 +448,7 @@ public class AppDeploymentController : Controller
             return View(model);
         }
 
-        TempData["SuccessMessage"] = "Deployment saved successfully.";
+        TempData["SuccessMessage"] = "Deployment saved successfully. Complete all required fields before starting deployment.";
 
         // Client stays on the tokenized form link; admin stays on the edit form.
         if (isTokenEdit)
@@ -478,67 +500,6 @@ public class AppDeploymentController : Controller
         const int maxLength = 30;
         string trimmed = clientAppName.Trim();
         return trimmed.Length <= maxLength ? trimmed : trimmed[..maxLength];
-    }
-
-    /// <summary>
-    /// Validates required Create-form file uploads.
-    /// </summary>
-    private static void ValidateRequiredFiles(
-        ModelStateDictionary modelState,
-        bool isEdit,
-        IFormFile? mobileAppIconFile,
-        IFormFile? launchImageFile,
-        IFormFile? storeIconFile,
-        IFormFile? featureGraphicFile,
-        IFormFile? firebaseIosConfigFile,
-        IFormFile? firebaseAndroidConfigFile,
-        IFormFile? playStoreKeyFile,
-        IFormFile? appleAuthKeyFile)
-    {
-        if (isEdit)
-        {
-            return;
-        }
-
-        if (mobileAppIconFile is null || mobileAppIconFile.Length == 0)
-        {
-            modelState.AddModelError("mobileAppIconFile", "Mobile app icon is required.");
-        }
-
-        if (launchImageFile is null || launchImageFile.Length == 0)
-        {
-            modelState.AddModelError("launchImageFile", "Launch image is required.");
-        }
-
-        if (storeIconFile is null || storeIconFile.Length == 0)
-        {
-            modelState.AddModelError("storeIconFile", "Store icon is required.");
-        }
-
-        if (featureGraphicFile is null || featureGraphicFile.Length == 0)
-        {
-            modelState.AddModelError("featureGraphicFile", "Feature graphic is required.");
-        }
-
-        if (firebaseIosConfigFile is null || firebaseIosConfigFile.Length == 0)
-        {
-            modelState.AddModelError("firebaseIosConfigFile", "GoogleService-Info.plist is required.");
-        }
-
-        if (firebaseAndroidConfigFile is null || firebaseAndroidConfigFile.Length == 0)
-        {
-            modelState.AddModelError("firebaseAndroidConfigFile", "google-services.json is required.");
-        }
-
-        if (playStoreKeyFile is null || playStoreKeyFile.Length == 0)
-        {
-            modelState.AddModelError("playStoreKeyFile", "Play Store key JSON file is required.");
-        }
-
-        if (appleAuthKeyFile is null || appleAuthKeyFile.Length == 0)
-        {
-            modelState.AddModelError("appleAuthKeyFile", "Apple auth key (.p8) file is required.");
-        }
     }
 
     /// <summary>

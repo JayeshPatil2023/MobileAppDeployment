@@ -2,6 +2,15 @@ using System.ComponentModel.DataAnnotations;
 
 namespace MobileAppDeployment.Models;
 
+/// <summary>
+/// Mobile app store submission configuration for a single client app.
+/// </summary>
+/// <remarks>
+/// Data annotations with <see cref="RequiredAttribute"/> remain on fields so the UI can show
+/// asterisks and so <c>StartDeployment</c> can run full validation.
+/// Create/Edit <strong>Save</strong> only enforces Organization Name and App Name
+/// (see <c>AppDeploymentValidation.ApplySaveValidation</c>).
+/// </remarks>
 public class AppDeployment
 {
     public int Id { get; set; }

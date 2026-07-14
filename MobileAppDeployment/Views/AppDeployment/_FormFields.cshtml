@@ -76,6 +76,15 @@
                 <span asp-validation-for="AdminEmail" class="field-error"></span>
             </div>
         </div>
+        <div class="field spacer">
+            <div class="field-label-wrap">
+                <label asp-for="DomainUrl" class="field-label">Domain <span class="required">*</span></label>
+                <field-help key="DomainUrl" />
+            </div>
+            <input asp-for="DomainUrl" class="form-input" type="url" placeholder="https://yourapp.com" />
+            <span asp-validation-for="DomainUrl" class="field-error"></span>
+            <span class="field-hint">Point your domain's A record to the deployment server. A free SSL certificate will be issued automatically via Let's Encrypt.</span>
+        </div>
     </div>
 </div>
 
@@ -122,8 +131,6 @@
 </div>
 
 <partial name="_IdentifierFields" model="Model" />
-
-<partial name="_WebsiteConfigFields" model="Model" />
 
 <div class="section" id="sec-apple">
     <div class="section-header">

@@ -1,0 +1,41 @@
+@*
+  Client-side counterpart to AppDeploymentValidation.ApplySaveValidation.
+  Keeps visual * / Required badges, but only enforces Organization Name + App Name on Save.
+  Full required validation runs server-side when the user starts deployment.
+*@
+<script>
+    (function () {
+        var form = document.getElementById('deployment-form');
+        if (!form || typeof jQuery === 'undefined') {
+            return;
+        }
+
+        var $form = jQuery(form);
+        // Only these two fields block Save in the browser (matches server save rules).
+        var saveRequiredNames = {
+            OrganizationName: true,
+            AppName: true
+        };
+
+        $form.find('[name]').each(function () {
+            var name = this.getAttribute('name');
+            if (!name || saveRequiredNames[name]) {
+                return;
+            }
+
+            // Strip unobtrusive "required" / min-length rules that would block empty draft fields.
+            // Keep email/url/maxlength so obviously invalid filled values still get client feedback.
+            this.removeAttribute('data-val-required');
+            this.removeAttribute('data-val-minlength');
+            this.removeAttribute('data-val-minlength-min');
+            this.removeAttribute('required');
+        });
+
+        // Re-parse after stripping attributes so jquery.validate picks up the save-only rules.
+        $form.removeData('validator');
+        $form.removeData('unobtrusiveValidation');
+        if (jQuery.validator && jQuery.validator.unobtrusive) {
+            jQuery.validator.unobtrusive.parse($form);
+        }
+    })();
+</script>

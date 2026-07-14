@@ -279,9 +279,9 @@ Saving and starting the deployment process are **decoupled**:
 
 | Action | Endpoint | Starts GitHub workflow? |
 |--------|----------|-------------------------|
-| **Save deployment** (Create first time) | `POST Create` | No — redirects to Edit with success message |
-| **Save deployment** (Edit) | `POST Edit` | No — stays on Edit with success message |
-| **Start App Deployment Process** | `POST StartDeployment` | Yes — uses saved DB row + asset paths |
+| **Save deployment** (Create first time) | `POST Create` | No — Org Name + App Name only; redirects to Edit |
+| **Save deployment** (Edit) | `POST Edit` | No — Org Name + App Name only; stays on Edit |
+| **Start App Deployment Process** | `POST StartDeployment` | Yes — after full required-field + asset validation |
 
 On Create, **Start App Deployment Process** is shown but **disabled** until the deployment exists (after first save, on Edit it is enabled).
 

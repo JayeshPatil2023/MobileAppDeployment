@@ -50,7 +50,7 @@
                 </div>
             </div>
             <div class="config-upload-item spacer">
-                <div class="upload-zone config-upload-zone @(string.IsNullOrEmpty(Model.PlayStoreKeyPath) ? "" : "has-file")"
+                <div class="@Html.UploadZoneClasses("playStoreKeyFile", !string.IsNullOrEmpty(Model.PlayStoreKeyPath), "config-upload-zone")"
                      data-upload-zone="playStoreKeyFile" data-upload-type="config">
                     <svg viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
                     <div class="field-label-wrap field-label-wrap--upload">
@@ -64,8 +64,8 @@
                     </span>
                 </div>
                 <input type="file" id="playStoreKeyFile" name="playStoreKeyFile" class="file-hidden"
-                       accept=".json,application/json" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.PlayStoreKeyPath) ? "true" : "false")" @(!isEdit ? "required" : null) />
-                <span class="field-error field-validation-valid" data-valmsg-for="playStoreKeyFile" data-valmsg-replace="true"></span>
+                       accept=".json,application/json" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.PlayStoreKeyPath) ? "true" : "false")" />
+                @Html.ValidationMessage("playStoreKeyFile", "", new { @class = "field-error", data_valmsg_for = "playStoreKeyFile", data_valmsg_replace = "true" })
             </div>
         </div>
 
@@ -127,7 +127,7 @@
                 </div>
             </div>
             <div class="config-upload-item spacer">
-                <div class="upload-zone config-upload-zone @(string.IsNullOrEmpty(Model.AppleAuthKeyPath) ? "" : "has-file")"
+                <div class="@Html.UploadZoneClasses("appleAuthKeyFile", !string.IsNullOrEmpty(Model.AppleAuthKeyPath), "config-upload-zone")"
                      data-upload-zone="appleAuthKeyFile" data-upload-type="config">
                     <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                     <div class="field-label-wrap field-label-wrap--upload">
@@ -141,8 +141,8 @@
                     </span>
                 </div>
                 <input type="file" id="appleAuthKeyFile" name="appleAuthKeyFile" class="file-hidden"
-                       accept=".p8,application/octet-stream,text/plain" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.AppleAuthKeyPath) ? "true" : "false")" @(!isEdit ? "required" : null) />
-                <span class="field-error field-validation-valid" data-valmsg-for="appleAuthKeyFile" data-valmsg-replace="true"></span>
+                       accept=".p8,application/octet-stream,text/plain" data-has-existing="@(isEdit && !string.IsNullOrEmpty(Model.AppleAuthKeyPath) ? "true" : "false")" />
+                @Html.ValidationMessage("appleAuthKeyFile", "", new { @class = "field-error", data_valmsg_for = "appleAuthKeyFile", data_valmsg_replace = "true" })
             </div>
         </div>
 

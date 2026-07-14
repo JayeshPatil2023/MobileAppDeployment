@@ -921,6 +921,16 @@ input[type="file"].file-hidden { display: none; }
   flex-wrap: wrap;
 }
 .footer-right { display: flex; align-items: center; gap: .75rem; }
+.footer-hint { font-size: 13px; max-width: 28rem; line-height: 1.4; }
+.footer-save-reminder {
+  margin: 1.5rem 0 0;
+  padding: .75rem 1rem;
+  font-size: 13px;
+  line-height: 1.45;
+  background: var(--bg-sub);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+}
 .deployment-start-form { margin: 0; display: inline; }
 .footer-hint { font-size: 13px; max-width: 28rem; line-height: 1.4; }
 

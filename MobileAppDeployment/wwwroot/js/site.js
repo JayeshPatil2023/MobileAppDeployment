@@ -62,6 +62,12 @@
         zone.classList.toggle('upload-zone--invalid', !!message);
       }
 
+      // After StartDeployment (or any server postback), paint zones red when ModelState
+      // already rendered a field-validation-error next to the upload card.
+      if (validationMessage && validationMessage.classList.contains('field-validation-error')) {
+        zone.classList.add('upload-zone--invalid');
+      }
+
       zone.addEventListener('click', () => input.click());
 
       input.addEventListener('change', () => {
@@ -73,13 +79,11 @@
         if (!file) {
           zone.classList.remove('has-file');
           if (filenameEl) filenameEl.textContent = '';
-          if (input.required && input.dataset.hasExisting !== 'true') {
-            setUploadValidationError('This field is required.');
-          }
           return;
         }
 
         zone.classList.add('has-file');
+        // Clear server/client invalid styling once the user picks a replacement file.
         setUploadValidationError('');
         if (filenameEl) filenameEl.textContent = file.name;
 
@@ -99,26 +103,6 @@
           reader.readAsDataURL(file);
         }
       });
-
-      // Required file inputs are hidden, so the browser/jQuery validator does not show messages automatically.
-      // Validate them explicitly on submit and paint the upload card red like text inputs.
-      const form = input.closest('form');
-      if (form) {
-        form.addEventListener('submit', (event) => {
-          if (!input.required || input.dataset.hasExisting === 'true') {
-            setUploadValidationError('');
-            return;
-          }
-
-          const hasFile = input.files && input.files.length > 0;
-          if (!hasFile) {
-            event.preventDefault();
-            setUploadValidationError('This field is required.');
-          } else {
-            setUploadValidationError('');
-          }
-        });
-      }
     });
   }
 
