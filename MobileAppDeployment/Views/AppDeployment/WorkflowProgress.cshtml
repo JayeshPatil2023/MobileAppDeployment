@@ -1,4 +1,4 @@
-@model MobileAppDeployment.Models.WorkflowProgressViewModel
+@model MobileAppDeployment.Core.Models.ViewModels.WorkflowProgressViewModel
 @{
     ViewData["Title"] = "Triggering base workflow";
 }
@@ -21,7 +21,7 @@
 
 <div class="data-card merge-progress-card" id="workflow-progress-root"
      data-job-id="@Model.JobId"
-     data-status-url="@Url.Action("WorkflowStatus", new { jobId = Model.JobId })">
+     data-status-url="@Url.Action("WorkflowStatus", "Workflow", new { jobId = Model.JobId })">
     <div class="merge-progress-card__header">
         <h2 class="merge-progress-card__title">@Model.ClientName</h2>
     </div>

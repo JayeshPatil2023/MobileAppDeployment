@@ -46,11 +46,24 @@ ScaffoldingReadMe.txt
 *.db-shm
 *.db-wal
 
-## User-specific / local config (may contain secrets)
+## User-specific / local config (INTENTIONALLY excluded — may contain secrets)
+# appsettings.Development.json is EXCLUDED ON PURPOSE.
+# Real secrets (DB password, GitHub token, SMTP creds, API keys) must be
+# stored in dotnet user-secrets and never committed to source control.
+# See docs/DEVELOPMENT-SETUP.md for setup instructions.
 appsettings.Development.json
 appsettings.Local.json
 **/appsettings.*.local.json
 secrets.json
+
+## dotnet user-secrets store (auto-generated per machine)
+**/UserSecrets/
+
+## ASP.NET Core Data Protection key ring (auto-generated)
+**/DataProtection-Keys/
+
+## Workflow-generated public assets (regenerated on each deployment trigger)
+MobileAppDeployment/wwwroot/uploads/workflow-assets/
 
 ## Uploaded client files (certificates, Firebase configs, assets)
 MobileAppDeployment/wwwroot/uploads/

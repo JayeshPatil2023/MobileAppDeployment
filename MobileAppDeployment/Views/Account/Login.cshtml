@@ -1,0 +1,76 @@
+@model MobileAppDeployment.Web.Controllers.LoginViewModel
+@{
+    ViewData["Title"] = "Admin Login";
+    ViewData["AuthLayout"] = true;
+    Layout = "_Layout";
+}
+
+<div class="login-page">
+    <div class="login-card">
+        <div class="login-card__header">
+            <div class="login-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+            </div>
+            <h1 class="login-card__title">Admin sign in</h1>
+            <p class="login-card__subtitle">Enter your credentials to manage app deployments</p>
+        </div>
+
+        <form asp-action="Login" method="post" asp-route-returnUrl="@ViewData["ReturnUrl"]" class="login-card__form" novalidate>
+            <div asp-validation-summary="ModelOnly" class="login-alert" role="alert"></div>
+
+            <div class="field">
+                <label asp-for="Email" class="field-label"></label>
+                <input asp-for="Email" class="form-input" autocomplete="username" autofocus placeholder="admin@company.com" />
+                <span asp-validation-for="Email" class="field-error"></span>
+            </div>
+
+            <div class="field">
+                <label asp-for="Password" class="field-label"></label>
+                <div class="password-field">
+                    <input asp-for="Password" class="form-input" autocomplete="current-password" placeholder="Enter your password" />
+                    <button type="button" class="password-toggle" id="toggle-password" aria-label="Show password" title="Show password">
+                        <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden>
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                            <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                            <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+                            <line x1="1" y1="1" x2="23" y2="23" />
+                        </svg>
+                    </button>
+                </div>
+                <span asp-validation-for="Password" class="field-error"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary login-card__submit">Sign in</button>
+        </form>
+
+        <p class="login-card__footer">Access is limited to authorized administrators.</p>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var toggle = document.getElementById('toggle-password');
+            if (!toggle) return;
+            var input = toggle.parentElement.querySelector('input');
+            var eye = toggle.querySelector('.icon-eye');
+            var eyeOff = toggle.querySelector('.icon-eye-off');
+            toggle.addEventListener('click', function () {
+                var showing = input.type === 'text';
+                input.type = showing ? 'password' : 'text';
+                eye.hidden = !showing;
+                eyeOff.hidden = showing;
+                toggle.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+                toggle.setAttribute('title', showing ? 'Show password' : 'Hide password');
+            });
+        })();
+    </script>
+}

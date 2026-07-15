@@ -1,3 +1,6 @@
 <Solution>
+  <Project Path="MobileAppDeployment.Tests/MobileAppDeployment.Tests.csproj">
+    <Build Solution="Debug|*" Project="false" />
+  </Project>
   <Project Path="MobileAppDeployment/MobileAppDeployment.csproj" />
 </Solution>

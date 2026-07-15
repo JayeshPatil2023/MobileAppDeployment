@@ -1,4 +1,4 @@
-@model IEnumerable<MobileAppDeployment.Models.AppDeployment>
+@model IEnumerable<MobileAppDeployment.Core.Models.ViewModels.AppDeploymentListItemViewModel>
 @{
     ViewData["Title"] = "App Deployments";
 }
@@ -46,10 +46,9 @@ else
             <thead>
                 <tr>
                     <th>App name</th>
-                    <th>Common name</th>
                     <th>Organization</th>
-                    <th>Contact</th>
                     <th>Created</th>
+                    <th>Modified</th>
                     <th></th>
                 </tr>
             </thead>
@@ -58,10 +57,9 @@ else
                 {
                     <tr>
                         <td><strong>@item.AppName</strong></td>
-                        <td class="cell-muted">@item.CommonName</td>
                         <td class="cell-muted">@item.OrganizationName</td>
-                        <td class="cell-muted">@item.ContactFirstName @item.ContactLastName</td>
                         <td class="cell-muted">@item.CreatedDate.ToString("MMM d, yyyy")</td>
+                        <td class="cell-muted">@(item.ModifiedDate?.ToString("MMM d, yyyy") ?? "—")</td>
                         <td>
                             <div class="table-actions">
                                 <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline">Details</a>

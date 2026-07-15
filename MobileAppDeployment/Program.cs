@@ -1,52 +1,87 @@
-using MobileAppDeployment.Services;
-using MobileAppDeployment.Services.GitHub;
-using MobileAppDeployment.Repositories;
-using MobileAppDeployment.Data;
-using MobileAppDeployment.Options;
-using Microsoft.EntityFrameworkCore;
+/*
+ * ─────────────────────────────────────────────────────────────────────────────
+ *  MobileAppDeployment — Application Entry Point
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ *  Program.cs should read like a high-level table of contents, not an
+ *  implementation manual. All service registrations live in:
+ *    Extensions/ServiceCollectionExtensions.cs
+ *
+ *  All middleware pipeline configuration lives in:
+ *    Extensions/WebApplicationExtensions.cs
+ *
+ *  Middleware order (IMPORTANT — do not reorder without understanding why):
+ *    1. Global exception handler       ← outermost; catches all downstream exceptions
+ *    2. Security headers               ← applied to every response including errors
+ *    3. HTTPS redirect + HSTS         ← transport security
+ *    4. Static files                   ← served before routing for performance
+ *    5. Rate limiting                  ← before routing so limits apply to all endpoints
+ *    6. Routing                        ← matches requests to endpoints
+ *    7. Authorization                  ← checks auth after routing sets endpoint metadata
+ *    8. Endpoint mapping               ← executes matched endpoint
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+using MobileAppDeployment.Extensions;
+using MobileAppDeployment.Infrastructure.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// ── Service Registration ───────────────────────────────────────────────────
+// All registrations are organized into logical groups in ServiceCollectionExtensions.cs.
+
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddAppRateLimiting();
+builder.Services.AddApplicationServices(builder.Configuration);
 
-// Repository & Service registration
-builder.Services.AddScoped<IAppDeploymentRepository, AppDeploymentRepository>();
-builder.Services.AddScoped<IAppDeploymentService, AppDeploymentService>();
-builder.Services.AddScoped<IAssetStorageService, AssetStorageService>();
-builder.Services.AddScoped<IWorkflowAssetStorageService, WorkflowAssetStorageService>();
-builder.Services.AddScoped<IFormAccessTokenRepository, FormAccessTokenRepository>();
-builder.Services.AddScoped<IFormAccessTokenService, FormAccessTokenService>();
-builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<IFormAccessEmailComposer, FormAccessEmailComposer>();
-builder.Services.Configure<FormAccessOptions>(builder.Configuration.GetSection(FormAccessOptions.SectionName));
-builder.Services.Configure<MailgunSmtpOptions>(builder.Configuration.GetSection(MailgunSmtpOptions.SectionName));
-builder.Services.Configure<GitHubOptions>(builder.Configuration.GetSection(GitHubOptions.SectionName));
-builder.Services.Configure<GitHubWorkflowDispatchOptions>(builder.Configuration.GetSection($"{GitHubOptions.SectionName}:WorkflowDispatch"));
-builder.Services.AddHttpClient<IGitHubWorkflowDispatchService, GitHubWorkflowDispatchService>();
-builder.Services.AddSingleton<IWorkflowJobStore, WorkflowJobStore>();
-builder.Services.AddScoped<IWorkflowOrchestrationService, WorkflowOrchestrationService>();
+// ── Application Build ──────────────────────────────────────────────────────
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// ── Middleware Pipeline ────────────────────────────────────────────────────
+//
+// 1 & 2: Global exception handling + security headers (must be outermost)
+app.UseSecurityMiddleware();
+
+// 3: Transport security
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
+    // HSTS tells browsers to only use HTTPS for this domain for 1 year.
+    // Only enable in Production — Development uses http://localhost.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
+
+// 4: Static files (wwwroot) — no auth required; security headers already applied above
 app.UseStaticFiles();
 
+// 5: Rate limiting — applied before routing so all matched requests are rate-limited
+app.UseRateLimiter();
+
+// 6: Routing — builds endpoint metadata from controller route attributes
 app.UseRouting();
 
+// 7: Authentication + authorization
+app.UseAuthentication();
 app.UseAuthorization();
+
+// 8: Health checks — public endpoint, no auth
+app.UseAppHealthChecks();
+
+// ── Route Configuration ────────────────────────────────────────────────────
 
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=AppDeployment}/{action=Index}/{id?}");
 
+await AdminUserSeeder.SeedAsync(app.Services);
+
 app.Run();
+
+/// <summary>
+/// Exposes the implicit Program class for integration testing.
+/// </summary>
+public partial class Program;

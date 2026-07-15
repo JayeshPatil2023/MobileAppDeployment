@@ -13,40 +13,52 @@
 <body>
     @{
         var isFormLayout = ViewData["FormLayout"] as bool? == true;
+        var isAuthLayout = ViewData["AuthLayout"] as bool? == true;
         var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
         var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
     }
 
     <header class="site-header">
         <div class="header-inner">
-            <a class="header-logo" asp-controller="AppDeployment" asp-action="Index">
+            <a class="header-logo" asp-controller="@(isAuthLayout ? "Account" : "AppDeployment")" asp-action="@(isAuthLayout ? "Login" : "Index")">
                 <div class="logo-icon">
                     <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
                 </div>
                 App Deployment
             </a>
-            <nav class="header-nav">
-                <a asp-controller="AppDeployment" asp-action="Index"
-                   class="@(currentController == "AppDeployment" && currentAction == "Index" ? "active" : null)">Deployments</a>
-            </nav>
-            <span class="header-badge">Store submission</span>
-            <div class="header-spacer"></div>
-            @if (isFormLayout)
+            @if (!isAuthLayout)
             {
-                @* Same shared Start Deployment control as the form footer — always reachable without scrolling. *@
-                <div class="header-deployment-action">
-                    <partial name="_StartDeploymentButton" />
-                </div>
+                <nav class="header-nav">
+                    <a asp-controller="AppDeployment" asp-action="Index"
+                       class="@(currentController == "AppDeployment" && currentAction == "Index" ? "active" : null)">Deployments</a>
+                </nav>
+                <span class="header-badge">Store submission</span>
+                <div class="header-spacer"></div>
+                if (isFormLayout)
+                {
+                    @* Same shared Start Deployment control as the form footer — always reachable without scrolling. *@
+                    <div class="header-deployment-action">
+                        <partial name="_StartDeploymentButton" />
+                    </div>
+                }
+                else if (currentAction != "Create" && currentAction != "Form" && currentAction != "Edit")
+                {
+                    <a class="header-action" asp-controller="AppDeployment" asp-action="Create">+ New deployment</a>
+                }
             }
-            else if (currentAction != "Create" && currentAction != "Form" && currentAction != "Edit")
+            else
             {
-                <a class="header-action" asp-controller="AppDeployment" asp-action="Create">+ New deployment</a>
+                <span class="header-badge">Admin access</span>
             }
         </div>
     </header>
 
-    <main role="main" class="site-main">
-        @if (isFormLayout)
+    <main role="main" class="site-main @(isAuthLayout ? "site-main--auth" : null)">
+        @if (isAuthLayout)
+        {
+            @RenderBody()
+        }
+        else if (isFormLayout)
         {
             <div class="form-shell">
                 <div class="form-shell__sidebar">
